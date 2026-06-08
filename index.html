@@ -158,6 +158,33 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 .google-btn:active{opacity:.8;}
 .photo-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:14px;border:1.5px dashed var(--border);background:none;font-family:"Nunito",sans-serif;font-size:15px;font-weight:700;color:var(--text2);cursor:pointer;}
 .photo-preview{width:100%;border-radius:12px;max-height:200px;object-fit:cover;margin-top:8px;display:none;}
+
+/* FRIENDS */
+.friends-header{padding:max(env(safe-area-inset-top),44px) 20px 16px;background:var(--white);border-bottom:1px solid var(--border);}
+.friend-card{background:var(--card);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);}
+.friend-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--g3);flex-shrink:0;background:var(--g4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--g2);}
+.friend-name{font-size:15px;font-weight:800;}
+.friend-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.friend-actions{margin-left:auto;display:flex;gap:8px;}
+.friend-action-btn{background:none;border:1.5px solid var(--border);border-radius:10px;padding:6px 12px;font-family:Nunito,sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;}
+.friend-action-btn.accept{border-color:var(--g1);color:var(--g1);}
+.friend-action-btn.decline{border-color:#EF476F;color:#EF476F;}
+.leaderboard-card{background:var(--card);border-radius:14px;padding:16px;border:1.5px solid var(--border);margin-bottom:10px;box-shadow:var(--shadow);}
+.lb-rank{font-size:24px;font-weight:900;color:var(--g2);width:32px;font-family:"DM Mono",monospace;flex-shrink:0;}
+.lb-rank.gold{color:#FFD166;}
+.lb-rank.silver{color:#9DBFA5;}
+.lb-rank.bronze{color:#FF6B35;}
+.lb-row{display:flex;align-items:center;gap:12px;}
+.lb-val{font-size:16px;font-weight:900;color:var(--g2);font-variant-numeric:tabular-nums;}
+.lb-label{font-size:11px;color:var(--text3);margin-top:2px;}
+.my-code-box{background:var(--g4);border-radius:14px;padding:16px;margin:16px 16px 0;text-align:center;border:1.5px dashed var(--g3);}
+.my-code{font-size:28px;font-weight:900;color:var(--g2);letter-spacing:4px;font-family:"DM Mono",monospace;}
+.code-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.add-friend-input{background:none;border:none;border-bottom:2px solid var(--border);color:var(--text);font-family:Nunito,sans-serif;width:100%;padding:8px 0;font-size:18px;font-weight:700;}
+.add-friend-input:focus{outline:none;border-bottom-color:var(--g1);}
+.lb-toggle{display:flex;gap:8px;padding:0 16px;margin-top:12px;}
+.lb-toggle-btn{flex:1;padding:10px;border-radius:12px;background:var(--card);border:1.5px solid var(--border);font-family:Nunito,sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;}
+.lb-toggle-btn.sel{border-color:var(--g1);background:var(--g4);color:var(--g2);}
 </style>
 </head>
 <body>
@@ -261,6 +288,13 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
           <option value="$">$ Dollar</option>
           <option value="£">£ Livre</option>
         </select>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="section-title">Confidentialité</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Masquer mes revenus</div><div class="setting-sub" style="font-size:12px;color:var(--text3);margin-top:2px">Tes amis ne voient pas tes revenus</div></div>
+        <button class="toggle" id="hide-revenues-toggle" onclick="toggleHideRevenues()"></button>
       </div>
     </div>
     <div class="settings-section">
@@ -392,12 +426,69 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
   </div>
 </div>
 
+
+<!-- FRIENDS VIEW -->
+<div class="view" id="v-friends">
+  <div class="friends-header">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:20px;font-weight:900;color:var(--g2)">Amis</div>
+      <button class="icon-btn" onclick="openAddFriend()">+</button>
+    </div>
+  </div>
+
+  <!-- My code -->
+  <div class="my-code-box" id="my-code-box" style="display:none">
+    <div class="code-sub">Mon code Minta</div>
+    <div class="my-code" id="my-code-display">—</div>
+    <button onclick="copyMyCode()" style="margin-top:10px;background:none;border:none;font-family:Nunito,sans-serif;font-size:13px;font-weight:700;color:var(--g2);cursor:pointer">📋 Copier</button>
+  </div>
+
+  <!-- Leaderboard toggle -->
+  <div class="lb-toggle">
+    <button class="lb-toggle-btn sel" id="lb-btn-rev" onclick="setLbMode('revenues')">💰 Revenus</button>
+    <button class="lb-toggle-btn" id="lb-btn-goals" onclick="setLbMode('goals')">🎯 Objectifs</button>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="section-pad" style="margin-top:12px">
+    <div class="section-title">Classement</div>
+    <div id="leaderboard-list"></div>
+  </div>
+
+  <!-- Friends list -->
+  <div class="section-pad" style="margin-top:8px">
+    <div class="section-title">Mes amis</div>
+    <div id="friends-list"></div>
+  </div>
+
+  <!-- Pending requests -->
+  <div class="section-pad" style="margin-top:8px" id="pending-section" style="display:none">
+    <div class="section-title">Demandes reçues</div>
+    <div id="pending-list"></div>
+  </div>
+</div>
+
+<!-- ADD FRIEND VIEW -->
+<div class="view" id="v-add-friend">
+  <div class="form-wrap">
+    <button class="back-btn" onclick="navTo('friends')">← Annuler</button>
+    <div class="form-title">Ajouter un ami</div>
+    <div class="field">
+      <label class="field-label">Email Google ou code Minta</label>
+      <input id="af-input" type="text" class="add-friend-input" placeholder="email@gmail.com ou MINTA#1234">
+    </div>
+    <div id="af-result" style="margin-top:8px"></div>
+    <button onclick="searchFriend()" style="width:100%;padding:18px;border:none;border-radius:16px;font-family:Nunito,sans-serif;font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--g1),var(--g2));color:white;cursor:pointer;margin-top:16px">Rechercher</button>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-home" onclick="navTo('home')"><span class="nav-icon">🎯</span><span id="t-nav-goals">Objectifs</span></button>
-  <button class="nav-btn" id="nav-revenues" onclick="navTo('revenues')"><span class="nav-icon">💰</span><span id="t-nav-rev">Revenus</span></button>
-  <button class="nav-btn" id="nav-badges" onclick="navTo('badges')"><span class="nav-icon">🏆</span><span id="t-nav-badges">Badges</span></button>
-  <button class="nav-btn" id="nav-settings" onclick="navTo('settings')"><span class="nav-icon">⚙️</span><span id="t-nav-settings">Réglages</span></button>
+  <button class="nav-btn active" id="nav-home" onclick="navTo('home')"><span class="nav-icon">🎯</span><span>Objectifs</span></button>
+  <button class="nav-btn" id="nav-revenues" onclick="navTo('revenues')"><span class="nav-icon">💰</span><span>Revenus</span></button>
+  <button class="nav-btn" id="nav-friends" onclick="navTo('friends')"><span class="nav-icon">👥</span><span>Amis</span></button>
+  <button class="nav-btn" id="nav-badges" onclick="navTo('badges')"><span class="nav-icon">🏆</span><span>Badges</span></button>
+  <button class="nav-btn" id="nav-settings" onclick="navTo('settings')"><span class="nav-icon">⚙️</span><span>Réglages</span></button>
 </nav>
 
 <!-- Firebase désactivé - sera réactivé avec domaine custom -->
@@ -641,12 +732,14 @@ function navTo(name){
   if(name==="revenues")renderRevenues();
   if(name==="badges")renderBadges();
   if(name==="detail")renderDetail();
+  if(name==="friends")renderFriendsView();
 }
 function renderAll(){renderHome();renderRevenues();renderBadges();}
 
 // Theme
 function toggleTheme(){window._S.settings.dark=!window._S.settings.dark;saveAll();applyTheme();}
 function applyTheme(){document.body.classList.toggle("dark",window._S.settings.dark);const t=document.getElementById("dark-toggle");if(t)t.classList.toggle("on",window._S.settings.dark);}
+function applyHideRevenues(){const t=document.getElementById("hide-revenues-toggle");if(t)t.className="toggle"+(window._S.settings.hideRevenues?" on":"");}
 
 // Language
 function setLang(lang){
@@ -840,9 +933,326 @@ function deleteRevenue(id){showConfirm(()=>{window._S.revenues=window._S.revenue
 // CONFETTI
 function launchConfetti(){const colors=["#3DB86B","#1E8A44","#C5E8B0","#FFD166","#06D6A0","#fff"];for(let i=0;i<60;i++){const el=document.createElement("div");const size=6+Math.random()*8;el.style.cssText=`position:fixed;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?"50%":"3px"};left:${Math.random()*100}vw;top:-20px;z-index:9999;pointer-events:none;animation:confettiFall ${1.5+Math.random()*2}s ease-in ${Math.random()*.5}s forwards;`;document.body.appendChild(el);setTimeout(()=>el.remove(),3500);}}
 
+
+
+// ============ FRIENDS / SOCIAL ============
+let lbMode = "revenues";
+
+function generateMintaCode(uid){
+  // Generate deterministic code from uid
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "MINTA#";
+  for(let i=0;i<4;i++) code += chars[uid.charCodeAt(i*2)%chars.length];
+  return code;
+}
+
+function setLbMode(mode){
+  lbMode = mode;
+  document.getElementById("lb-btn-rev").className = "lb-toggle-btn"+(mode==="revenues"?" sel":"");
+  document.getElementById("lb-btn-goals").className = "lb-toggle-btn"+(mode==="goals"?" sel":"");
+  renderLeaderboard();
+}
+
+function toggleHideRevenues(){
+  window._S.settings.hideRevenues = !window._S.settings.hideRevenues;
+  const t = document.getElementById("hide-revenues-toggle");
+  if(t) t.className = "toggle"+(window._S.settings.hideRevenues?" on":"");
+  saveAll();
+}
+
+function openAddFriend(){
+  document.getElementById("af-input").value = "";
+  document.getElementById("af-result").innerHTML = "";
+  navTo("add-friend");
+}
+
+function copyMyCode(){
+  const code = document.getElementById("my-code-display").textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(code);
+  else{const t=document.createElement("textarea");t.value=code;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);}
+  const btn = event.target;
+  btn.textContent = "✅ Copié !";
+  setTimeout(()=>btn.textContent="📋 Copier", 2000);
+}
+
+async function searchFriend(){
+  const input = document.getElementById("af-input").value.trim();
+  const result = document.getElementById("af-result");
+  if(!input){ result.innerHTML = `<div style="color:#EF476F;font-size:13px">Saisis un email ou un code Minta</div>`; return; }
+  if(!window._fbUser){ result.innerHTML = `<div style="color:#EF476F;font-size:13px">Connecte-toi d'abord avec Google</div>`; return; }
+  
+  result.innerHTML = `<div style="color:var(--text3);font-size:13px">Recherche en cours...</div>`;
+  
+  try {
+    const fb = window._fb;
+    const db = fb.db;
+    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    
+    let userSnap = null;
+    let foundUid = null;
+    
+    // Search by email or code
+    const isCode = input.toUpperCase().startsWith("MINTA#");
+    const usersRef = collection(db, "users");
+    
+    if(isCode){
+      const q = query(usersRef, where("mintaCode", "==", input.toUpperCase()));
+      const snap = await getDocs(q);
+      if(!snap.empty){ userSnap = snap.docs[0]; foundUid = snap.docs[0].id; }
+    } else {
+      const q = query(usersRef, where("email", "==", input.toLowerCase()));
+      const snap = await getDocs(q);
+      if(!snap.empty){ userSnap = snap.docs[0]; foundUid = snap.docs[0].id; }
+    }
+    
+    if(!userSnap){
+      result.innerHTML = `<div style="color:#EF476F;font-size:13px;padding:12px;background:rgba(239,71,111,.1);border-radius:10px">Aucun utilisateur trouvé 😕</div>`;
+      return;
+    }
+    
+    if(foundUid === window._fbUser.uid){
+      result.innerHTML = `<div style="color:#EF476F;font-size:13px;padding:12px;background:rgba(239,71,111,.1);border-radius:10px">C'est toi 😄</div>`;
+      return;
+    }
+    
+    const userData = userSnap.data();
+    const name = userData.displayName || userData.email || "Utilisateur";
+    const photo = userData.photoURL || "";
+    
+    result.innerHTML = `
+      <div style="background:var(--card);border-radius:14px;padding:16px;border:1.5px solid var(--g3);display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--g4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--g2);flex-shrink:0;overflow:hidden">
+          ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : name[0].toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800">${name}</div>
+          <div style="font-size:12px;color:var(--text3)">${userData.mintaCode||""}</div>
+        </div>
+        <button onclick="sendFriendRequest('${foundUid}','${name}')" style="background:linear-gradient(135deg,var(--g1),var(--g2));border:none;border-radius:10px;padding:8px 14px;font-family:Nunito,sans-serif;font-size:13px;font-weight:800;color:white;cursor:pointer">Ajouter</button>
+      </div>`;
+  } catch(e){
+    console.error(e);
+    result.innerHTML = `<div style="color:#EF476F;font-size:13px">Erreur: ${e.message}</div>`;
+  }
+}
+
+async function sendFriendRequest(toUid, toName){
+  const fb = window._fb;
+  const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  try {
+    // Add to their pending requests
+    await setDoc(doc(fb.db, "users", toUid, "friendRequests", window._fbUser.uid), {
+      fromUid: window._fbUser.uid,
+      fromName: window._fbUser.displayName || window._fbUser.email,
+      fromPhoto: window._fbUser.photoURL || "",
+      fromCode: generateMintaCode(window._fbUser.uid),
+      status: "pending",
+      timestamp: Date.now()
+    });
+    document.getElementById("af-result").innerHTML = `<div style="background:var(--g4);border-radius:12px;padding:14px;text-align:center;color:var(--g2);font-weight:700">✅ Demande envoyée à ${toName} !</div>`;
+  } catch(e){
+    document.getElementById("af-result").innerHTML = `<div style="color:#EF476F;font-size:13px">Erreur: ${e.message}</div>`;
+  }
+}
+
+async function acceptFriendRequest(fromUid, fromName, fromPhoto, fromCode){
+  const fb = window._fb;
+  const { doc, setDoc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  try {
+    const myUid = window._fbUser.uid;
+    const myCode = generateMintaCode(myUid);
+    // Add each other as friends
+    await setDoc(doc(fb.db,"users",myUid,"friends",fromUid), { uid:fromUid, name:fromName, photo:fromPhoto, code:fromCode, since:Date.now() });
+    await setDoc(doc(fb.db,"users",fromUid,"friends",myUid), { uid:myUid, name:window._fbUser.displayName||window._fbUser.email, photo:window._fbUser.photoURL||"", code:myCode, since:Date.now() });
+    // Delete request
+    await deleteDoc(doc(fb.db,"users",myUid,"friendRequests",fromUid));
+    renderFriendsView();
+  } catch(e){ console.error(e); }
+}
+
+async function declineFriendRequest(fromUid){
+  const fb = window._fb;
+  const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await deleteDoc(doc(fb.db,"users",window._fbUser.uid,"friendRequests",fromUid));
+  renderFriendsView();
+}
+
+async function removeFriend(friendUid){
+  showConfirm(async()=>{
+    const fb = window._fb;
+    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await deleteDoc(doc(fb.db,"users",window._fbUser.uid,"friends",friendUid));
+    renderFriendsView();
+  });
+}
+
+async function renderFriendsView(){
+  if(!window._fbUser){
+    document.getElementById("friends-list").innerHTML = `<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:14px">Connecte-toi pour voir tes amis</div>`;
+    document.getElementById("leaderboard-list").innerHTML = "";
+    document.getElementById("my-code-box").style.display = "none";
+    return;
+  }
+  
+  const myUid = window._fbUser.uid;
+  const myCode = generateMintaCode(myUid);
+  document.getElementById("my-code-display").textContent = myCode;
+  document.getElementById("my-code-box").style.display = "block";
+  
+  // Save mintaCode + email to Firestore for discovery
+  try {
+    const fb = window._fb;
+    const { doc, setDoc, getDoc, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    
+    // Update user profile for discovery
+    await setDoc(doc(fb.db,"users",myUid), {
+      mintaCode: myCode,
+      email: window._fbUser.email,
+      displayName: window._fbUser.displayName || "",
+      photoURL: window._fbUser.photoURL || "",
+    }, { merge: true });
+    
+    // Load friends
+    const friendsSnap = await getDocs(collection(fb.db,"users",myUid,"friends"));
+    const friends = [];
+    friendsSnap.forEach(d => friends.push({uid:d.id,...d.data()}));
+    
+    // Load pending requests
+    const reqSnap = await getDocs(collection(fb.db,"users",myUid,"friendRequests"));
+    const requests = [];
+    reqSnap.forEach(d => requests.push({uid:d.id,...d.data()}));
+    
+    // Render pending
+    const pendingSec = document.getElementById("pending-section");
+    const pendingList = document.getElementById("pending-list");
+    if(requests.length > 0){
+      pendingSec.style.display = "block";
+      pendingList.innerHTML = requests.map(r=>`
+        <div class="friend-card">
+          <div class="friend-avatar">${r.fromPhoto?`<img src="${r.fromPhoto}" style="width:44px;height:44px;border-radius:50%;object-fit:cover">`:(r.fromName||"?")[0].toUpperCase()}</div>
+          <div style="flex:1"><div class="friend-name">${r.fromName||"Utilisateur"}</div><div class="friend-sub">${r.fromCode||""}</div></div>
+          <div class="friend-actions">
+            <button class="friend-action-btn accept" onclick="acceptFriendRequest('${r.fromUid}','${r.fromName}','${r.fromPhoto}','${r.fromCode}')">✓</button>
+            <button class="friend-action-btn decline" onclick="declineFriendRequest('${r.fromUid}')">✕</button>
+          </div>
+        </div>`).join("");
+    } else {
+      pendingSec.style.display = "none";
+    }
+    
+    // Render friends list
+    const friendsList = document.getElementById("friends-list");
+    if(friends.length === 0){
+      friendsList.innerHTML = `<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:14px">Ajoute tes premiers amis avec le +</div>`;
+    } else {
+      friendsList.innerHTML = friends.map(f=>`
+        <div class="friend-card">
+          <div class="friend-avatar">${f.photo?`<img src="${f.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover">`:(f.name||"?")[0].toUpperCase()}</div>
+          <div style="flex:1"><div class="friend-name">${f.name||"Ami"}</div><div class="friend-sub">${f.code||""}</div></div>
+          <button class="friend-action-btn decline" onclick="removeFriend('${f.uid}')">✕</button>
+        </div>`).join("");
+    }
+    
+    // Load leaderboard data
+    await renderLeaderboardWithFriends(friends, myUid);
+    
+  } catch(e){ console.error("Friends error:", e); }
+}
+
+async function renderLeaderboardWithFriends(friends, myUid){
+  const fb = window._fb;
+  const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  
+  const lbList = document.getElementById("leaderboard-list");
+  if(friends.length === 0){ lbList.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:13px">Ajoute des amis pour voir le classement</div>`; return; }
+  
+  // Build leaderboard entries: me + friends
+  const entries = [];
+  
+  // Me
+  const myHideRevenues = window._S.settings.hideRevenues;
+  const myVal = lbMode === "revenues" 
+    ? (myHideRevenues ? null : getMyMonthRevenues())
+    : getMyGoalsPct();
+  entries.push({ uid: myUid, name: "Moi", photo: window._fbUser.photoURL||"", val: myVal, isMe: true, hidden: myHideRevenues && lbMode==="revenues" });
+  
+  // Friends
+  for(const f of friends){
+    try {
+      const snap = await getDoc(doc(fb.db,"users",f.uid));
+      if(snap.exists()){
+        const d = snap.data();
+        const hidden = d.settings?.hideRevenues && lbMode==="revenues";
+        const val = lbMode === "revenues"
+          ? (hidden ? null : getFriendMonthRevenues(d))
+          : getFriendGoalsPct(d);
+        entries.push({ uid: f.uid, name: f.name||"Ami", photo: f.photo||"", val, hidden });
+      }
+    } catch(e){ console.error(e); }
+  }
+  
+  // Sort (hidden go to bottom)
+  entries.sort((a,b)=>{
+    if(a.hidden && !b.hidden) return 1;
+    if(!a.hidden && b.hidden) return -1;
+    return (b.val||0)-(a.val||0);
+  });
+  
+  const medals = ["🥇","🥈","🥉"];
+  lbList.innerHTML = entries.map((e,i)=>{
+    const rankDisplay = i<3 ? medals[i] : `#${i+1}`;
+    const valDisplay = e.hidden ? "🔒 Masqué" : (lbMode==="revenues" ? `${fmt(e.val||0)} ${window._S.settings.currency}` : `${Math.round(e.val||0)}%`);
+    const bg = e.isMe ? "border-color:var(--g1);background:var(--g4)" : "";
+    return `<div class="leaderboard-card" style="${bg}">
+      <div class="lb-row">
+        <div style="font-size:22px;width:36px;flex-shrink:0">${rankDisplay}</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--g4);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--g2);flex-shrink:0;overflow:hidden">
+          ${e.photo?`<img src="${e.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:50%">`:e.name[0].toUpperCase()}
+        </div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:800">${e.isMe?"⭐ Moi":e.name}</div></div>
+        <div style="text-align:right"><div class="lb-val">${valDisplay}</div><div class="lb-label">${lbMode==="revenues"?"Ce mois":"Objectifs"}</div></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function getMyMonthRevenues(){
+  const now = new Date(), cur = getMonthKey(now);
+  return window._S.revenues.filter(r=>r.period===cur).reduce((s,r)=>s+r.amount,0);
+}
+function getFriendMonthRevenues(data){
+  if(!data.revenues) return 0;
+  const now = new Date(), cur = getMonthKey(now);
+  return data.revenues.filter(r=>r.period===cur).reduce((s,r)=>s+r.amount,0);
+}
+function getMyGoalsPct(){
+  if(window._S.goals.length===0) return 0;
+  const done = window._S.goals.filter(g=>getTotal(g)>=g.target).length;
+  return (done/window._S.goals.length)*100;
+}
+function getFriendGoalsPct(data){
+  if(!data.goals||data.goals.length===0) return 0;
+  const done = data.goals.filter(g=>{const t=g.entries?.reduce((s,e)=>s+e.amount,0)||0;return t>=g.target;}).length;
+  return (done/data.goals.length)*100;
+}
+
+function renderLeaderboard(){
+  if(!window._fbUser) return;
+  // Re-render with current mode
+  const fb = window._fb;
+  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({collection,getDocs})=>{
+    getDocs(collection(fb.db,"users",window._fbUser.uid,"friends")).then(snap=>{
+      const friends=[];snap.forEach(d=>friends.push({uid:d.id,...d.data()}));
+      renderLeaderboardWithFriends(friends,window._fbUser.uid);
+    });
+  });
+}
+// ============ END FRIENDS ============
+
 // INIT
 loadData();
 applyTheme();
+applyHideRevenues();
 applyLang();
 buildEmojiGrid("ag-emoji-grid");
 buildColorPicker();
