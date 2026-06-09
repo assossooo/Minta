@@ -564,7 +564,14 @@ function applyHideRevenues(){const t=document.getElementById("hide-revenues-togg
 function doGoogleSignIn(){
   if(!window._fbReady){alert("Firebase non disponible");return;}
   const provider=new firebase.auth.GoogleAuthProvider();
-  window._auth.signInWithRedirect(provider);
+  window._auth.signInWithPopup(provider).catch(function(e){
+    if(e.code==="auth/popup-blocked"||e.code==="auth/cancelled-popup-request"){
+      // Fallback to redirect if popup blocked
+      window._auth.signInWithRedirect(provider);
+    } else if(e.code!=="auth/popup-closed-by-user"){
+      alert("Erreur: "+e.message);
+    }
+  });
 }
 function doGoogleSignOut(){showConfirm(()=>{window._auth.signOut();});}
 
