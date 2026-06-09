@@ -213,6 +213,37 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 .lb-toggle-btn.sel{border-color:var(--g1);background:var(--g4);color:var(--g2);}
 .add-friend-input{background:none;border:none;border-bottom:2px solid var(--border);color:var(--text);font-family:Nunito,sans-serif;width:100%;padding:8px 0;font-size:18px;font-weight:700;}
 .add-friend-input:focus{outline:none;border-bottom-color:var(--g1);}
+
+/* BUDGET CALCULATOR */
+.budget-fab{position:fixed;bottom:calc(140px + env(safe-area-inset-bottom));left:16px;background:linear-gradient(135deg,#118AB2,#06D6A0);border:none;font-size:15px;color:white;cursor:pointer;box-shadow:0 4px 18px rgba(17,138,178,.45);display:flex;align-items:center;justify-content:center;z-index:50;}
+.wizard-header{padding:max(env(safe-area-inset-top),44px) 20px 16px;background:linear-gradient(135deg,#118AB2,#06D6A0);color:white;}
+.wizard-title{font-size:22px;font-weight:900;margin-bottom:4px;}
+.wizard-sub{font-size:13px;opacity:.85;}
+.wizard-progress{height:4px;background:rgba(255,255,255,.3);border-radius:100px;margin-top:14px;overflow:hidden;}
+.wizard-progress-fill{height:100%;background:white;border-radius:100px;transition:width .4s ease;}
+.wizard-step{padding:20px 20px 0;}
+.wizard-question{font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px;}
+.wizard-hint{font-size:13px;color:var(--text3);margin-bottom:20px;}
+.wizard-field{background:var(--card);border-radius:14px;padding:16px;border:1.5px solid var(--border);margin-bottom:12px;box-shadow:var(--shadow);}
+.wizard-input{background:none;border:none;border-bottom:2px solid var(--border);color:var(--text);font-family:Nunito,sans-serif;width:100%;padding:8px 0;font-size:24px;font-weight:800;font-family:"DM Mono",monospace;}
+.wizard-input:focus{outline:none;border-bottom-color:#118AB2;}
+.wizard-input.sm{font-size:16px;font-family:Nunito,sans-serif;font-weight:600;}
+.wizard-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px;font-weight:700;}
+.wizard-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;}
+.wizard-toggle-lbl{font-size:15px;font-weight:700;}
+.wizard-nav{display:flex;gap:12px;padding:20px 20px 0;}
+.wizard-btn-back{flex:1;padding:16px;border-radius:14px;border:1.5px solid var(--border);background:none;font-family:Nunito,sans-serif;font-size:16px;font-weight:700;color:var(--text2);cursor:pointer;}
+.wizard-btn-next{flex:2;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,#118AB2,#06D6A0);font-family:Nunito,sans-serif;font-size:16px;font-weight:800;color:white;cursor:pointer;}
+.expense-item{background:var(--card);border-radius:12px;padding:12px 16px;border:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.add-expense-btn{width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--border);background:none;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:var(--text3);cursor:pointer;margin-top:4px;}
+.result-card{border-radius:var(--radius);padding:28px 20px;margin:16px 16px 0;color:white;text-align:center;}
+.result-amount{font-size:52px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
+.result-date{font-size:14px;opacity:.85;margin-top:8px;}
+.result-breakdown{background:var(--card);border-radius:14px;padding:16px;margin:12px 16px 0;border:1.5px solid var(--border);}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.result-row:last-child{border-bottom:none;font-weight:800;font-size:16px;}
+.result-plus{color:var(--g1);}
+.result-minus{color:#EF476F;}
 </style>
 </head>
 <body>
@@ -240,6 +271,7 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
     <div id="goals-list"></div>
   </div>
   <button class="fab" onclick="openAddGoal()">+</button>
+  <button class="budget-fab" onclick="openBudgetWizard()" title="Calculateur de budget" style="width:auto;border-radius:28px;padding:14px 18px;gap:8px;flex-direction:row;font-size:14px;font-weight:800;white-space:nowrap">💡 Mon budget</button>
 </div>
 
 <!-- REVENUES -->
@@ -564,6 +596,121 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
     <div class="field"><label class="field-label">Montant</label><input id="ee-amount" type="number" inputmode="decimal" class="field-input xl" placeholder="1423"></div>
     <div class="field"><label class="field-label">Note</label><input id="ee-note" type="text" class="field-input md" placeholder="Vendredi soir..."></div>
     <button onclick="saveEditEntry()" style="width:100%;padding:18px;border:none;border-radius:16px;font-family:Nunito,sans-serif;font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--g1),var(--g2));color:white;cursor:pointer;margin-top:10px">Sauvegarder</button>
+  </div>
+</div>
+
+
+<!-- BUDGET CALCULATOR WIZARD -->
+<div class="view" id="v-budget">
+  <div class="wizard-header">
+    <button class="back-btn" onclick="navTo('home')" style="color:white;margin-bottom:12px">← Retour</button>
+    <div class="wizard-title">💡 Calculateur de budget</div>
+    <div class="wizard-sub" id="wizard-sub">Étape 1 sur 6</div>
+    <div class="wizard-progress"><div class="wizard-progress-fill" id="wizard-progress" style="width:16%"></div></div>
+  </div>
+
+  <!-- STEP 1: Solde actuel -->
+  <div id="ws-1" class="wizard-step">
+    <div class="wizard-question">💰 Combien as-tu en ce moment ?</div>
+    <div class="wizard-hint">Solde total de tous tes comptes bancaires</div>
+    <div class="wizard-field">
+      <label class="wizard-label">Solde total</label>
+      <input id="w-balance" type="number" inputmode="decimal" class="wizard-input" placeholder="12 500">
+    </div>
+    <div class="wizard-field">
+      <label class="wizard-label">Devise</label>
+      <select id="w-currency" class="field-select" style="font-size:16px"></select>
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-next" onclick="wizardNext(1)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Loyer & charges -->
+  <div id="ws-2" class="wizard-step" style="display:none">
+    <div class="wizard-question">🏠 Loyer & charges</div>
+    <div class="wizard-hint">As-tu déjà payé ce mois-ci ?</div>
+    <div class="wizard-field">
+      <div class="wizard-toggle-row">
+        <div class="wizard-toggle-lbl">Loyer déjà payé</div>
+        <button class="toggle" id="w-rent-paid" onclick="toggleWizardToggle('w-rent-paid','w-rent-details',true)"></button>
+      </div>
+      <div id="w-rent-details">
+        <input id="w-rent" type="number" inputmode="decimal" class="wizard-input" placeholder="Montant loyer">
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1"><label class="wizard-label">Jour de prélèvement</label><input id="w-rent-day" type="number" inputmode="numeric" class="wizard-input sm" placeholder="1 - 31" min="1" max="31"></div>
+        </div>
+      </div>
+    </div>
+    <div class="wizard-field">
+      <div class="wizard-toggle-row">
+        <div class="wizard-toggle-lbl">Charges (élec, eau, gaz...)</div>
+        <button class="toggle" id="w-bills-paid" onclick="toggleWizardToggle('w-bills-paid','w-bills-details',true)"></button>
+      </div>
+      <div id="w-bills-details">
+        <input id="w-bills" type="number" inputmode="decimal" class="wizard-input" placeholder="Total charges">
+        <div style="flex:1;margin-top:12px"><label class="wizard-label">Jour de prélèvement</label><input id="w-bills-day" type="number" inputmode="numeric" class="wizard-input sm" placeholder="1 - 31" min="1" max="31"></div>
+      </div>
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-back" onclick="wizardBack(2)">← Retour</button>
+      <button class="wizard-btn-next" onclick="wizardNext(2)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Carte de crédit -->
+  <div id="ws-3" class="wizard-step" style="display:none">
+    <div class="wizard-question">💳 Carte de crédit</div>
+    <div class="wizard-hint">Si tu as une carte à débit différé</div>
+    <div class="wizard-field">
+      <div class="wizard-toggle-row">
+        <div class="wizard-toggle-lbl">J'ai une carte à débit différé</div>
+        <button class="toggle" id="w-cc-toggle" onclick="toggleWizardToggle('w-cc-toggle','w-cc-details',false)"></button>
+      </div>
+      <div id="w-cc-details" style="display:none">
+        <label class="wizard-label">Solde dû actuellement</label>
+        <input id="w-cc-balance" type="number" inputmode="decimal" class="wizard-input" placeholder="Montant dû">
+        <div style="margin-top:12px"><label class="wizard-label">Jour de prélèvement</label><input id="w-cc-day" type="number" inputmode="numeric" class="wizard-input sm" placeholder="1 - 31" min="1" max="31"></div>
+      </div>
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-back" onclick="wizardBack(3)">← Retour</button>
+      <button class="wizard-btn-next" onclick="wizardNext(3)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Dépenses exceptionnelles -->
+  <div id="ws-4" class="wizard-step" style="display:none">
+    <div class="wizard-question">📋 Dépenses à venir</div>
+    <div class="wizard-hint">École, crèche, déménagement, vacances...</div>
+    <div id="w-expenses-list"></div>
+    <button class="add-expense-btn" onclick="addWizardExpense()">+ Ajouter une dépense</button>
+    <div class="wizard-nav" style="margin-top:16px">
+      <button class="wizard-btn-back" onclick="wizardBack(4)">← Retour</button>
+      <button class="wizard-btn-next" onclick="wizardNext(4)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Rentrées d'argent -->
+  <div id="ws-5" class="wizard-step" style="display:none">
+    <div class="wizard-question">📈 Rentrées d'argent à venir</div>
+    <div class="wizard-hint">Salaire, freelance, remboursements...</div>
+    <div id="w-incomes-list"></div>
+    <button class="add-expense-btn" onclick="addWizardIncome()">+ Ajouter une rentrée</button>
+    <div class="wizard-nav" style="margin-top:16px">
+      <button class="wizard-btn-back" onclick="wizardBack(5)">← Retour</button>
+      <button class="wizard-btn-next" onclick="wizardNext(5)">Calculer 🧮</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Résultat -->
+  <div id="ws-6" style="display:none;padding-bottom:140px">
+    <div id="budget-result-card" class="result-card"></div>
+    <div class="result-breakdown" id="budget-breakdown"></div>
+    <div style="padding:16px">
+      <button onclick="navTo('home')" style="width:100%;padding:16px;border-radius:14px;border:none;background:var(--g4);font-family:Nunito,sans-serif;font-size:16px;font-weight:800;color:var(--g2);cursor:pointer;margin-bottom:10px">🏠 Retour à l'accueil</button>
+      <button onclick="wizardBack(6)" style="width:100%;padding:14px;border-radius:14px;border:1.5px solid var(--border);background:none;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:var(--text3);cursor:pointer">← Modifier</button>
+    </div>
   </div>
 </div>
 
@@ -981,6 +1128,252 @@ function saveEditEntry(){
   renderDetail();
   navTo("detail");
 }
+
+
+// ============ BUDGET CALCULATOR ============
+let wizardData = {};
+let wizardExpenses = [];
+let wizardIncomes = [];
+
+function openBudgetWizard(){
+  // Load saved data if exists
+  const saved = window._S.settings.budgetData;
+  if(saved){
+    wizardData = saved.data || {};
+    wizardExpenses = saved.expenses || [];
+    wizardIncomes = saved.incomes || [];
+    // Pre-fill fields
+    setTimeout(()=>prefillWizard(), 50);
+  } else {
+    wizardData = {};
+    wizardExpenses = [];
+    wizardIncomes = [];
+  }
+  buildCurrencySel("w-currency");
+  renderWizardExpenses();
+  renderWizardIncomes();
+  showWizardStep(1);
+  navTo("budget");
+}
+
+function prefillWizard(){
+  if(wizardData.balance) setVal("w-balance", wizardData.balance);
+  if(wizardData.currency) setVal("w-currency", wizardData.currency);
+  if(wizardData.rentPaid !== undefined) setWToggle("w-rent-paid", "w-rent-details", wizardData.rentPaid, true);
+  if(wizardData.rent) setVal("w-rent", wizardData.rent);
+  if(wizardData.rentDay) setVal("w-rent-day", wizardData.rentDay);
+  if(wizardData.billsPaid !== undefined) setWToggle("w-bills-paid", "w-bills-details", wizardData.billsPaid, true);
+  if(wizardData.bills) setVal("w-bills", wizardData.bills);
+  if(wizardData.billsDay) setVal("w-bills-day", wizardData.billsDay);
+  if(wizardData.hasCC) setWToggle("w-cc-toggle", "w-cc-details", wizardData.hasCC, false);
+  if(wizardData.ccBalance) setVal("w-cc-balance", wizardData.ccBalance);
+  if(wizardData.ccDay) setVal("w-cc-day", wizardData.ccDay);
+}
+
+function setVal(id, val){ const el=document.getElementById(id); if(el) el.value=val; }
+function setWToggle(toggleId, detailsId, isOn, hiddenWhenOn){
+  const t=document.getElementById(toggleId);
+  const d=document.getElementById(detailsId);
+  if(t) t.className="toggle"+(isOn?" on":"");
+  if(d) d.style.display=(isOn===hiddenWhenOn)?"none":"block";
+}
+
+function showWizardStep(step){
+  for(let i=1;i<=6;i++){
+    const el=document.getElementById("ws-"+i);
+    if(el) el.style.display=(i===step)?"block":"none";
+  }
+  const pct=Math.round((step/6)*100);
+  const prog=document.getElementById("wizard-progress");
+  if(prog) prog.style.width=pct+"%";
+  const sub=document.getElementById("wizard-sub");
+  if(sub) sub.textContent="Étape "+step+" sur 6";
+  window.scrollTo(0,0);
+}
+
+function toggleWizardToggle(toggleId, detailsId, hiddenWhenOn){
+  const t=document.getElementById(toggleId);
+  const d=document.getElementById(detailsId);
+  if(!t||!d) return;
+  const isOn=!t.classList.contains("on");
+  t.className="toggle"+(isOn?" on":"");
+  d.style.display=(isOn===hiddenWhenOn)?"none":"block";
+}
+
+function wizardNext(step){
+  // Save current step data
+  saveWizardStep(step);
+  if(step===5){
+    computeBudget();
+    showWizardStep(6);
+  } else {
+    showWizardStep(step+1);
+  }
+}
+function wizardBack(step){ showWizardStep(step-1); }
+
+function saveWizardStep(step){
+  const g = id => { const el=document.getElementById(id); return el?el.value:""; };
+  const tog = id => { const el=document.getElementById(id); return el?el.classList.contains("on"):false; };
+  if(step===1){
+    wizardData.balance = parseFloat(g("w-balance"))||0;
+    wizardData.currency = g("w-currency")||window._S.settings.currency;
+  }
+  if(step===2){
+    wizardData.rentPaid = tog("w-rent-paid");
+    wizardData.rent = parseFloat(g("w-rent"))||0;
+    wizardData.rentDay = parseInt(g("w-rent-day"))||1;
+    wizardData.billsPaid = tog("w-bills-paid");
+    wizardData.bills = parseFloat(g("w-bills"))||0;
+    wizardData.billsDay = parseInt(g("w-bills-day"))||1;
+  }
+  if(step===3){
+    wizardData.hasCC = tog("w-cc-toggle");
+    wizardData.ccBalance = parseFloat(g("w-cc-balance"))||0;
+    wizardData.ccDay = parseInt(g("w-cc-day"))||1;
+  }
+  // Save to settings
+  window._S.settings.budgetData = { data: wizardData, expenses: wizardExpenses, incomes: wizardIncomes };
+  saveAll();
+}
+
+function addWizardExpense(){
+  wizardExpenses.push({ id:Date.now(), label:"", amount:0, day:1 });
+  renderWizardExpenses();
+}
+function removeWizardExpense(id){
+  wizardExpenses=wizardExpenses.filter(e=>e.id!==id);
+  renderWizardExpenses();
+}
+function renderWizardExpenses(){
+  const list=document.getElementById("w-expenses-list");
+  if(!list) return;
+  list.innerHTML=wizardExpenses.map(e=>`
+    <div class="wizard-field" id="we-${e.id}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <input type="text" class="wizard-input sm" placeholder="École, crèche, vacances..." value="${e.label||""}" oninput="updateExpense(${e.id},'label',this.value)" style="flex:1">
+        <button onclick="removeWizardExpense(${e.id})" style="background:none;border:none;color:#EF476F;font-size:20px;cursor:pointer;padding:0 0 0 10px">×</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:2"><label class="wizard-label">Montant</label><input type="number" inputmode="decimal" class="wizard-input sm" placeholder="0" value="${e.amount||""}" oninput="updateExpense(${e.id},'amount',parseFloat(this.value)||0)"></div>
+        <div style="flex:1"><label class="wizard-label">Jour</label><input type="number" inputmode="numeric" class="wizard-input sm" placeholder="1-31" value="${e.day||""}" min="1" max="31" oninput="updateExpense(${e.id},'day',parseInt(this.value)||1)"></div>
+      </div>
+    </div>`).join("");
+}
+function updateExpense(id, field, val){ const e=wizardExpenses.find(x=>x.id===id); if(e) e[field]=val; }
+
+function addWizardIncome(){
+  wizardIncomes.push({ id:Date.now(), label:"", amount:0, day:1 });
+  renderWizardIncomes();
+}
+function removeWizardIncome(id){
+  wizardIncomes=wizardIncomes.filter(e=>e.id!==id);
+  renderWizardIncomes();
+}
+function renderWizardIncomes(){
+  const list=document.getElementById("w-incomes-list");
+  if(!list) return;
+  list.innerHTML=wizardIncomes.map(e=>`
+    <div class="wizard-field" id="wi-${e.id}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <input type="text" class="wizard-input sm" placeholder="Salaire, freelance..." value="${e.label||""}" oninput="updateIncome(${e.id},'label',this.value)" style="flex:1">
+        <button onclick="removeWizardIncome(${e.id})" style="background:none;border:none;color:#EF476F;font-size:20px;cursor:pointer;padding:0 0 0 10px">×</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:2"><label class="wizard-label">Montant</label><input type="number" inputmode="decimal" class="wizard-input sm" placeholder="0" value="${e.amount||""}" oninput="updateIncome(${e.id},'amount',parseFloat(this.value)||0)"></div>
+        <div style="flex:1"><label class="wizard-label">Jour</label><input type="number" inputmode="numeric" class="wizard-input sm" placeholder="1-31" value="${e.day||""}" min="1" max="31" oninput="updateIncome(${e.id},'day',parseInt(this.value)||1)"></div>
+      </div>
+    </div>`).join("");
+}
+function updateIncome(id, field, val){ const e=wizardIncomes.find(x=>x.id===id); if(e) e[field]=val; }
+
+function computeBudget(){
+  saveWizardStep(5);
+  const now = new Date();
+  const today = now.getDate();
+  const currency = wizardData.currency || window._S.settings.currency;
+  let balance = wizardData.balance || 0;
+  const breakdown = [];
+  breakdown.push({ label:"💰 Solde actuel", amount:balance, type:"start" });
+
+  // Find the furthest date to show result
+  const allDays = [];
+  if(!wizardData.rentPaid && wizardData.rent>0) allDays.push(wizardData.rentDay||1);
+  if(!wizardData.billsPaid && wizardData.bills>0) allDays.push(wizardData.billsDay||1);
+  if(wizardData.hasCC && wizardData.ccBalance>0) allDays.push(wizardData.ccDay||1);
+  wizardExpenses.filter(e=>e.amount>0).forEach(e=>allDays.push(e.day||1));
+  wizardIncomes.filter(e=>e.amount>0).forEach(e=>allDays.push(e.day||1));
+
+  // Determine result date (end of month or furthest day)
+  let resultDay = allDays.length>0 ? Math.max(...allDays) : 30;
+  let resultDate;
+  if(resultDay <= today){
+    // Next month
+    resultDate = new Date(now.getFullYear(), now.getMonth()+1, resultDay);
+  } else {
+    resultDate = new Date(now.getFullYear(), now.getMonth(), resultDay);
+  }
+
+  // Calculate all deductions & additions
+  // Rent
+  if(!wizardData.rentPaid && wizardData.rent>0){
+    balance -= wizardData.rent;
+    breakdown.push({ label:"🏠 Loyer (jour "+wizardData.rentDay+")", amount:-wizardData.rent, type:"minus" });
+  }
+  // Bills
+  if(!wizardData.billsPaid && wizardData.bills>0){
+    balance -= wizardData.bills;
+    breakdown.push({ label:"⚡ Charges (jour "+wizardData.billsDay+")", amount:-wizardData.bills, type:"minus" });
+  }
+  // Credit card
+  if(wizardData.hasCC && wizardData.ccBalance>0){
+    balance -= wizardData.ccBalance;
+    breakdown.push({ label:"💳 Carte crédit (jour "+wizardData.ccDay+")", amount:-wizardData.ccBalance, type:"minus" });
+  }
+  // Expenses
+  wizardExpenses.filter(e=>e.amount>0).forEach(e=>{
+    balance -= e.amount;
+    breakdown.push({ label:(e.label||"Dépense")+" (jour "+(e.day||1)+")", amount:-e.amount, type:"minus" });
+  });
+  // Incomes
+  wizardIncomes.filter(e=>e.amount>0).forEach(e=>{
+    balance += e.amount;
+    breakdown.push({ label:(e.label||"Rentrée")+" (jour "+(e.day||1)+")", amount:e.amount, type:"plus" });
+  });
+
+  breakdown.push({ label:"🏁 Solde final", amount:balance, type:"total" });
+
+  // Result date format
+  const months = getM();
+  const dateStr = resultDate.getDate()+" "+months[resultDate.getMonth()]+" "+resultDate.getFullYear();
+
+  // Render result card
+  const isPositive = balance >= 0;
+  const resultCard = document.getElementById("budget-result-card");
+  if(resultCard){
+    resultCard.style.background = isPositive
+      ? "linear-gradient(135deg,var(--g1),var(--g2))"
+      : "linear-gradient(135deg,#EF476F,#c0392b)";
+    resultCard.innerHTML = `
+      <div style="font-size:13px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Le ${dateStr} vous aurez</div>
+      <div class="result-amount" style="margin:12px 0">${isPositive?"+":""}${fmt(Math.round(balance))} ${currency}</div>
+      <div style="font-size:14px;opacity:.85">${isPositive?"✅ Budget positif 🎉":"⚠️ Attention, budget négatif"}</div>
+    `;
+  }
+
+  // Render breakdown
+  const breakdownEl = document.getElementById("budget-breakdown");
+  if(breakdownEl){
+    breakdownEl.innerHTML = `<div style="font-size:13px;font-weight:800;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Détail</div>`+
+    breakdown.map(r=>{
+      const cls = r.type==="start"?"":r.type==="total"?"":r.type==="plus"?"result-plus":"result-minus";
+      const sign = r.type==="plus"?"+ ":r.type==="minus"?"- ":"";
+      const bold = r.type==="total"?"font-weight:800;font-size:16px;":"";
+      return `<div class="result-row" style="${bold}"><span>${r.label}</span><span class="${cls}">${sign}${fmt(Math.abs(Math.round(r.amount)))} ${currency}</span></div>`;
+    }).join("");
+  }
+}
+// ============ END BUDGET CALCULATOR ============
 
 // ============ V4.3 ============
 
