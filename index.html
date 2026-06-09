@@ -17,7 +17,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// Init Firebase immediately - compat SDK is synchronous
+// Init Firebase - wait for SDK to be ready
+function initFirebase(){
 try {
   firebase.initializeApp({
     apiKey:"AIzaSyBQFA9hpbUiW-ypGoK309svuXd1LMRsRWI",
@@ -34,6 +35,13 @@ try {
   window._fbReady = false;
   console.error("Firebase init failed:", e);
 }
+}
+// Try immediately, retry if not ready
+if(typeof firebase !== "undefined"){initFirebase();}
+else{document.addEventListener("DOMContentLoaded",function(){
+  if(typeof firebase !== "undefined"){initFirebase();}
+  else{setTimeout(function(){if(typeof firebase !== "undefined")initFirebase();},500);}
+});}
 </script>
 
 <!-- Google Analytics -->
@@ -145,12 +153,11 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 .rev-meta{font-size:12px;color:var(--text3);margin-top:2px;}
 .chart-wrap{background:var(--card);border-radius:var(--radius);padding:18px;margin:16px 16px 0;border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
 .chart-title{font-size:13px;font-weight:800;color:var(--text2);margin-bottom:14px;}
-.chart-bars{display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;}
-.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;}
-.chart-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--g1),var(--g2));min-height:6px;transition:height .5s ease;}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:120px;}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;}
+.chart-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--g1),var(--g2));transition:height .5s ease;}
 .chart-bar.dim{background:var(--g3);}
-.chart-lbl{font-size:10px;color:var(--text3);font-weight:700;text-align:center;white-space:nowrap;}
-.chart-val{font-size:9px;color:var(--text2);font-weight:700;text-align:center;}
+.chart-lbl{font-size:10px;color:var(--text3);font-weight:700;text-align:center;white-space:nowrap;margin-top:4px;}
 .compare-row{display:flex;gap:10px;padding:0 16px;margin-top:12px;}
 .compare-card{flex:1;background:var(--card);border-radius:14px;padding:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);}
 .compare-period{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;}
@@ -760,7 +767,7 @@ function renderRevenues(){
     for(let i=chartPeriod-1;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:mk(d),label:getShortM(d)});}
   }
   const totals=months.map(m=>window._S.revenues.filter(r=>r.period===m.key).reduce((s,r)=>s+r.amount,0)),maxVal=Math.max(...totals,1);
-  const bars=document.getElementById("chart-bars");if(bars){bars.innerHTML="";months.forEach((m,i)=>{const p=(totals[i]/maxVal)*100;const isCur=m.key===mk(now);const barH=Math.max(p,5);bars.innerHTML+=`<div class="chart-bar-wrap"><div class="chart-bar${isCur?"":" dim"}" style="height:${barH}%"></div><div class="chart-lbl">${m.label}</div></div>`;});}
+  const MAX_BAR=90;const bars=document.getElementById("chart-bars");if(bars){bars.innerHTML="";months.forEach((m,i)=>{const isCur=m.key===mk(now);const barPx=totals[i]>0?Math.max(Math.round((totals[i]/maxVal)*MAX_BAR),8):0;const valStr=totals[i]>0?fmt(Math.round(totals[i])):"";bars.innerHTML+=`<div class="chart-bar-wrap"><div style="font-size:8px;color:var(--g2);font-weight:800;text-align:center;margin-bottom:3px;height:12px;line-height:12px">${valStr}</div>${barPx>0?`<div class="chart-bar${isCur?"":" dim"}" style="height:${barPx}px"></div>`:`<div style="height:2px;width:80%;background:var(--border);border-radius:2px;opacity:.5"></div>`}<div class="chart-lbl">${m.label}</div></div>`;});}
   const list=document.getElementById("rev-list");if(!list)return;list.innerHTML="";
   if(window._S.revenues.length===0){list.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-title">Pas encore de revenus</div><div class="empty-sub">Appuie sur + pour ajouter</div></div>`;return;}
   [...window._S.revenues].reverse().forEach(r=>{const el=document.createElement("div");el.className="rev-entry";el.innerHTML=`<div style="flex:1"><div class="rev-amount">+${fmt(r.amount)} ${r.currency}</div><div class="rev-meta">${r.periodLabel||r.period}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:4px"><button class="del-btn" onclick="openEditRevenue(${r.id})" style="font-size:16px">✏️</button><button class="del-btn" onclick="deleteRevenue(${r.id})">×</button></div>`;list.appendChild(el);});
@@ -904,8 +911,9 @@ function renderLeaderboard(friends,myUid){
   });
 }
 
-// Firebase Auth listener
-if(window._fbReady){
+// Firebase Auth listener - wait for Firebase to be ready
+function setupAuthListener(){
+  if(!window._fbReady||!window._auth)return;
   window._auth.onAuthStateChanged(function(user){
     window._fbUser=user||null;
     const lbl=document.getElementById("account-label"),sub=document.getElementById("account-sub"),ico=document.getElementById("account-icon");
@@ -1138,6 +1146,16 @@ function isDateInFuture(month,year){
 }
 
 // ============ END V4.3 ============
+
+// Setup auth listener after firebase is ready
+function trySetupAuth(){
+  if(typeof firebase !== "undefined" && window._fbReady && window._auth){
+    setupAuthListener();
+  } else {
+    setTimeout(trySetupAuth, 200);
+  }
+}
+trySetupAuth();
 
 // INIT
 loadData();
