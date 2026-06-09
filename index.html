@@ -548,6 +548,7 @@ function navTo(name){
   if(name==="revenues")renderRevenues();
   if(name==="badges")renderBadges();
   if(name==="friends")renderFriendsView();
+  if(name==="detail")renderDetail();
 }
 function renderAll(){renderHome();renderRevenues();renderBadges();}
 
@@ -563,7 +564,7 @@ function applyHideRevenues(){const t=document.getElementById("hide-revenues-togg
 function doGoogleSignIn(){
   if(!window._fbReady){alert("Firebase non disponible");return;}
   const provider=new firebase.auth.GoogleAuthProvider();
-  window._auth.signInWithPopup(provider).catch(e=>{if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")alert("Erreur: "+e.message);});
+  window._auth.signInWithRedirect(provider);
 }
 function doGoogleSignOut(){showConfirm(()=>{window._auth.signOut();});}
 
@@ -613,7 +614,7 @@ function renderHome(){
     const card=document.createElement("div");card.className="goal-card";card.style.animationDelay=(i*.06)+"s";
     if(isDone)card.style.borderColor=color;
     card.innerHTML=`<div class="card-top"><div class="card-left"><span class="card-emoji">${g.emoji}</span><div><div class="card-name">${g.title}</div><div class="card-period">${g.period}</div>${g.tag?`<span class="card-tag" style="background:${color}20;color:${color}">${g.tag}</span>`:""}${g.recurring?`<div class="recurring-badge" style="color:${color};background:${color}20">🔄 Récurrent</div>`:""}</div></div>${isDone?`<div class="badge-done" style="background:${color}">✓ ATTEINT</div>`:""}</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg,${color}99,${color})"></div></div><div class="card-amounts"><div class="card-current" style="color:${color}">${fmt(total)} <span style="font-size:14px;color:var(--text3);font-weight:600">${g.currency}</span></div><div class="card-target">/ ${fmt(g.target)} ${g.currency}</div></div><div class="card-meta">${Math.round(pct)}% · ${g.entries.length} entrée${g.entries.length>1?"s":""}${!isDone&&total>0?" · "+fmt(g.target-total)+" "+g.currency+" restants":""}</div>${getDeadlineHtml(g)}`;
-    card.onclick=()=>{cGoalId=g.id;navTo("detail");};
+    card.onclick=(function(gid){return function(){cGoalId=gid;navTo("detail");renderDetail();};})(g.id);
     list.appendChild(card);
   });
 }
@@ -836,6 +837,13 @@ if(window._fbReady){
       if(userBar)userBar.style.display="none";
     }
   });
+}
+
+// Handle redirect result on page load
+if(window._fbReady){
+  window._auth.getRedirectResult().then(function(result){
+    if(result&&result.user) console.log("Redirect sign-in OK");
+  }).catch(function(e){ console.error("redirect result:",e); });
 }
 
 // INIT
