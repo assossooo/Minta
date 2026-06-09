@@ -143,13 +143,14 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 .rev-entry{background:var(--card);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);}
 .rev-amount{font-size:18px;font-weight:900;color:var(--g2);}
 .rev-meta{font-size:12px;color:var(--text3);margin-top:2px;}
-.chart-wrap{background:var(--card);border-radius:var(--radius);padding:18px;margin:16px 16px 0;border:1.5px solid var(--border);box-shadow:var(--shadow);}
+.chart-wrap{background:var(--card);border-radius:var(--radius);padding:18px;margin:16px 16px 0;border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
 .chart-title{font-size:13px;font-weight:800;color:var(--text2);margin-bottom:14px;}
-.chart-bars{display:flex;align-items:flex-end;gap:6px;height:80px;}
-.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.chart-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--g1),var(--g2));min-height:3px;}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;}
+.chart-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--g1),var(--g2));min-height:6px;transition:height .5s ease;}
 .chart-bar.dim{background:var(--g3);}
-.chart-lbl{font-size:9px;color:var(--text3);font-weight:700;text-align:center;}
+.chart-lbl{font-size:10px;color:var(--text3);font-weight:700;text-align:center;white-space:nowrap;}
+.chart-val{font-size:9px;color:var(--text2);font-weight:700;text-align:center;}
 .compare-row{display:flex;gap:10px;padding:0 16px;margin-top:12px;}
 .compare-card{flex:1;background:var(--card);border-radius:14px;padding:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);}
 .compare-period{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;}
@@ -759,7 +760,7 @@ function renderRevenues(){
     for(let i=chartPeriod-1;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:mk(d),label:getShortM(d)});}
   }
   const totals=months.map(m=>window._S.revenues.filter(r=>r.period===m.key).reduce((s,r)=>s+r.amount,0)),maxVal=Math.max(...totals,1);
-  const bars=document.getElementById("chart-bars");if(bars){bars.innerHTML="";months.forEach((m,i)=>{const p=(totals[i]/maxVal)*100;const isCur=m.key===mk(now);bars.innerHTML+=`<div class="chart-bar-wrap"><div class="chart-bar${isCur?"":" dim"}" style="height:${Math.max(p,3)}%;min-width:4px"></div><div class="chart-lbl">${m.label}</div></div>`;});}
+  const bars=document.getElementById("chart-bars");if(bars){bars.innerHTML="";months.forEach((m,i)=>{const p=(totals[i]/maxVal)*100;const isCur=m.key===mk(now);const barH=Math.max(p,5);bars.innerHTML+=`<div class="chart-bar-wrap"><div class="chart-bar${isCur?"":" dim"}" style="height:${barH}%"></div><div class="chart-lbl">${m.label}</div></div>`;});}
   const list=document.getElementById("rev-list");if(!list)return;list.innerHTML="";
   if(window._S.revenues.length===0){list.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-title">Pas encore de revenus</div><div class="empty-sub">Appuie sur + pour ajouter</div></div>`;return;}
   [...window._S.revenues].reverse().forEach(r=>{const el=document.createElement("div");el.className="rev-entry";el.innerHTML=`<div style="flex:1"><div class="rev-amount">+${fmt(r.amount)} ${r.currency}</div><div class="rev-meta">${r.periodLabel||r.period}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:4px"><button class="del-btn" onclick="openEditRevenue(${r.id})" style="font-size:16px">✏️</button><button class="del-btn" onclick="deleteRevenue(${r.id})">×</button></div>`;list.appendChild(el);});
