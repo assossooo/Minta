@@ -506,7 +506,7 @@ window.loadCloud = function(){};
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyBQFA9hpbUiW-ypGoK309svuXd1LMRsRWI",
@@ -518,6 +518,45 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Expose everything on window for use in regular scripts
+window._fb = { db, auth, collection, getDocs, doc, setDoc, getDoc, deleteDoc, query, where };
+
+// Save to Firestore - called after every data change
+window.saveCloud = async function(){
+  if(!window._fbUser) return;
+  try {
+    await setDoc(doc(db, "users", window._fbUser.uid), {
+      goals: window._S.goals,
+      revenues: window._S.revenues,
+      settings: window._S.settings,
+      updatedAt: Date.now()
+    });
+  } catch(e){ console.error("saveCloud error:", e); }
+};
+
+// Load from Firestore - called on login
+async function loadCloud(uid){
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    if(snap.exists()){
+      const d = snap.data();
+      // Cloud wins over local - always use cloud data
+      if(d.goals) window._S.goals = d.goals;
+      if(d.revenues) window._S.revenues = d.revenues;
+      if(d.settings) window._S.settings = Object.assign({}, window._S.settings, d.settings);
+      localStorage.setItem("minta-v4", JSON.stringify(window._S));
+      if(typeof renderAll === "function") renderAll();
+      if(typeof applyTheme === "function") applyTheme();
+      if(typeof applyHideRevenues === "function") applyHideRevenues();
+      console.log("Cloud data loaded ✅");
+    } else {
+      // First login - save local data to cloud
+      await window.saveCloud();
+      console.log("First login - local data saved to cloud ✅");
+    }
+  } catch(e){ console.error("loadCloud error:", e); }
+}
 
 onAuthStateChanged(auth, user => {
   window._fbUser = user || null;
@@ -541,31 +580,6 @@ onAuthStateChanged(auth, user => {
     if(signOutBtn) signOutBtn.style.display = "none";
   }
 });
-
-async function loadCloud(uid){
-  try {
-    const snap = await getDoc(doc(db, "users", uid));
-    if(snap.exists()){
-      const d = snap.data();
-      if(d.goals && d.goals.length > 0) window._S.goals = d.goals;
-      if(d.revenues && d.revenues.length > 0) window._S.revenues = d.revenues;
-      if(d.settings) window._S.settings = Object.assign({}, window._S.settings, d.settings);
-      if(typeof saveLocal === "function") saveLocal();
-      if(typeof renderAll === "function") renderAll();
-    } else {
-      saveCloud(uid);
-    }
-  } catch(e){ console.error("Cloud load:", e); }
-}
-
-function saveCloud(uid){
-  if(!uid) return;
-  db.collection ? 
-    db.collection("users").doc(uid).set({goals:window._S.goals,revenues:window._S.revenues,settings:window._S.settings,updatedAt:Date.now()}).catch(e=>console.error(e)) :
-    setDoc(doc(db,"users",uid),{goals:window._S.goals,revenues:window._S.revenues,settings:window._S.settings,updatedAt:Date.now()}).catch(e=>console.error(e));
-}
-
-window._fbSave = function(uid){ saveCloud(uid); };
 
 window.doGoogleSignIn = function(){
   signInWithPopup(auth, new GoogleAuthProvider()).catch(e => {
@@ -701,7 +715,7 @@ function tr(k){return (T[window._S.settings.lang]||T.fr)[k]||k;}
 function saveLocal(){localStorage.setItem(KEY,JSON.stringify(window._S));}
 function saveAll(){
   saveLocal();
-  if(window._fbUser && typeof saveCloud === "function") saveCloud(window._fbUser.uid);
+  if(window._fbUser && window.saveCloud) window.saveCloud();
 }
 function loadData(){
   const keys=["minta-v4","minta-v3","minta-v2","minta-v1"];
@@ -980,13 +994,12 @@ async function searchFriend(){
   const result = document.getElementById("af-result");
   if(!input){ result.innerHTML = `<div style="color:#EF476F;font-size:13px">Saisis un email ou un code Minta</div>`; return; }
   if(!window._fbUser){ result.innerHTML = `<div style="color:#EF476F;font-size:13px">Connecte-toi d'abord avec Google</div>`; return; }
+  if(!window._fb||!window._fb.db){ result.innerHTML = `<div style="color:#EF476F;font-size:13px">Firebase non disponible</div>`; return; }
   
   result.innerHTML = `<div style="color:var(--text3);font-size:13px">Recherche en cours...</div>`;
   
   try {
-    const fb = window._fb;
-    const db = fb.db;
-    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const { db, collection, query, where, getDocs } = window._fb;
     
     let userSnap = null;
     let foundUid = null;
@@ -1037,11 +1050,9 @@ async function searchFriend(){
 }
 
 async function sendFriendRequest(toUid, toName){
-  const fb = window._fb;
-  const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  const { db, doc, setDoc } = window._fb;
   try {
-    // Add to their pending requests
-    await setDoc(doc(fb.db, "users", toUid, "friendRequests", window._fbUser.uid), {
+    await setDoc(doc(db, "users", toUid, "friendRequests", window._fbUser.uid), {
       fromUid: window._fbUser.uid,
       fromName: window._fbUser.displayName || window._fbUser.email,
       fromPhoto: window._fbUser.photoURL || "",
@@ -1056,32 +1067,27 @@ async function sendFriendRequest(toUid, toName){
 }
 
 async function acceptFriendRequest(fromUid, fromName, fromPhoto, fromCode){
-  const fb = window._fb;
-  const { doc, setDoc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  const { db, doc, setDoc, deleteDoc } = window._fb;
   try {
     const myUid = window._fbUser.uid;
     const myCode = generateMintaCode(myUid);
-    // Add each other as friends
-    await setDoc(doc(fb.db,"users",myUid,"friends",fromUid), { uid:fromUid, name:fromName, photo:fromPhoto, code:fromCode, since:Date.now() });
-    await setDoc(doc(fb.db,"users",fromUid,"friends",myUid), { uid:myUid, name:window._fbUser.displayName||window._fbUser.email, photo:window._fbUser.photoURL||"", code:myCode, since:Date.now() });
-    // Delete request
-    await deleteDoc(doc(fb.db,"users",myUid,"friendRequests",fromUid));
+    await setDoc(doc(db,"users",myUid,"friends",fromUid), { uid:fromUid, name:fromName, photo:fromPhoto, code:fromCode, since:Date.now() });
+    await setDoc(doc(db,"users",fromUid,"friends",myUid), { uid:myUid, name:window._fbUser.displayName||window._fbUser.email, photo:window._fbUser.photoURL||"", code:myCode, since:Date.now() });
+    await deleteDoc(doc(db,"users",myUid,"friendRequests",fromUid));
     renderFriendsView();
   } catch(e){ console.error(e); }
 }
 
 async function declineFriendRequest(fromUid){
-  const fb = window._fb;
-  const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  await deleteDoc(doc(fb.db,"users",window._fbUser.uid,"friendRequests",fromUid));
+  const { db, doc, deleteDoc } = window._fb;
+  await deleteDoc(doc(db,"users",window._fbUser.uid,"friendRequests",fromUid));
   renderFriendsView();
 }
 
 async function removeFriend(friendUid){
   showConfirm(async()=>{
-    const fb = window._fb;
-    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    await deleteDoc(doc(fb.db,"users",window._fbUser.uid,"friends",friendUid));
+    const { db, doc, deleteDoc } = window._fb;
+    await deleteDoc(doc(db,"users",window._fbUser.uid,"friends",friendUid));
     renderFriendsView();
   });
 }
@@ -1101,11 +1107,9 @@ async function renderFriendsView(){
   
   // Save mintaCode + email to Firestore for discovery
   try {
-    const fb = window._fb;
-    const { doc, setDoc, getDoc, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const { db, doc, setDoc, getDoc, collection, getDocs } = window._fb;
     
-    // Update user profile for discovery
-    await setDoc(doc(fb.db,"users",myUid), {
+    await setDoc(doc(db,"users",myUid), {
       mintaCode: myCode,
       email: window._fbUser.email,
       displayName: window._fbUser.displayName || "",
@@ -1113,12 +1117,12 @@ async function renderFriendsView(){
     }, { merge: true });
     
     // Load friends
-    const friendsSnap = await getDocs(collection(fb.db,"users",myUid,"friends"));
+    const friendsSnap = await getDocs(collection(db,"users",myUid,"friends"));
     const friends = [];
     friendsSnap.forEach(d => friends.push({uid:d.id,...d.data()}));
     
     // Load pending requests
-    const reqSnap = await getDocs(collection(fb.db,"users",myUid,"friendRequests"));
+    const reqSnap = await getDocs(collection(db,"users",myUid,"friendRequests"));
     const requests = [];
     reqSnap.forEach(d => requests.push({uid:d.id,...d.data()}));
     
@@ -1160,8 +1164,7 @@ async function renderFriendsView(){
 }
 
 async function renderLeaderboardWithFriends(friends, myUid){
-  const fb = window._fb;
-  const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  const { db, doc, getDoc } = window._fb;
   
   const lbList = document.getElementById("leaderboard-list");
   if(friends.length === 0){ lbList.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:13px">Ajoute des amis pour voir le classement</div>`; return; }
@@ -1179,7 +1182,7 @@ async function renderLeaderboardWithFriends(friends, myUid){
   // Friends
   for(const f of friends){
     try {
-      const snap = await getDoc(doc(fb.db,"users",f.uid));
+      const snap = await getDoc(doc(db,"users",f.uid));
       if(snap.exists()){
         const d = snap.data();
         const hidden = d.settings?.hideRevenues && lbMode==="revenues";
@@ -1241,7 +1244,7 @@ function renderLeaderboard(){
   // Re-render with current mode
   const fb = window._fb;
   import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({collection,getDocs})=>{
-    getDocs(collection(fb.db,"users",window._fbUser.uid,"friends")).then(snap=>{
+    getDocs(collection(db,"users",window._fbUser.uid,"friends")).then(snap=>{
       const friends=[];snap.forEach(d=>friends.push({uid:d.id,...d.data()}));
       renderLeaderboardWithFriends(friends,window._fbUser.uid);
     });
