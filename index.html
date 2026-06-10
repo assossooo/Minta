@@ -216,6 +216,7 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 
 /* BUDGET CALCULATOR */
 .budget-fab{position:fixed;bottom:calc(140px + env(safe-area-inset-bottom));left:16px;background:linear-gradient(135deg,#118AB2,#06D6A0);border:none;font-size:15px;color:white;cursor:pointer;box-shadow:0 4px 18px rgba(17,138,178,.45);display:flex;align-items:center;justify-content:center;z-index:50;}
+.rentability-fab{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom));left:16px;background:linear-gradient(135deg,#9B5DE5,#F15BB5);border:none;border-radius:28px;padding:14px 18px;font-family:"Nunito",sans-serif;font-size:14px;font-weight:800;color:white;cursor:pointer;box-shadow:0 4px 18px rgba(155,93,229,.45);display:flex;align-items:center;gap:8px;z-index:50;white-space:nowrap;}
 .wizard-header{padding:max(env(safe-area-inset-top),44px) 20px 16px;background:linear-gradient(135deg,#118AB2,#06D6A0);color:white;}
 .wizard-title{font-size:22px;font-weight:900;margin-bottom:4px;}
 .wizard-sub{font-size:13px;opacity:.85;}
@@ -279,6 +280,7 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
   </div>
   <button class="fab" onclick="openAddGoal()">+</button>
   <button class="budget-fab" onclick="openBudgetWizard()" title="Calculateur de budget" style="width:auto;border-radius:28px;padding:14px 18px;gap:8px;flex-direction:row;font-size:14px;font-weight:800;white-space:nowrap">💡 Mon budget</button>
+  <button class="rentability-fab" onclick="openRentabilityWizard()" title="Suis-je rentable ?">🔍 Suis-je rentable ?</button>
 </div>
 
 <!-- REVENUES -->
@@ -751,6 +753,111 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
 
   </div>
   <button class="qr-close" onclick="closeBitQR()">✕ Fermer</button>
+</div>
+
+
+<!-- RENTABILITY WIZARD -->
+<div class="view" id="v-rentability">
+  <div class="wizard-header" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)">
+    <button class="back-btn" onclick="navTo('home')" style="color:white;margin-bottom:12px">← Retour</button>
+    <div class="wizard-title">🔍 Suis-je rentable ?</div>
+    <div class="wizard-sub" id="rent-wizard-sub">Étape 1 sur 5</div>
+    <div class="wizard-progress"><div class="wizard-progress-fill" id="rent-wizard-progress" style="width:20%"></div></div>
+  </div>
+
+  <!-- STEP 1: Revenus -->
+  <div id="rws-1" class="wizard-step">
+    <div class="wizard-question">💰 Tes revenus</div>
+    <div class="wizard-hint">Sur quelle période veux-tu analyser ?</div>
+    <div class="wizard-field">
+      <label class="wizard-label">Période</label>
+      <div class="lb-toggle" style="padding:0;margin-bottom:16px">
+        <button class="lb-toggle-btn sel" id="rent-period-1" onclick="setRentPeriod(1)">1 mois</button>
+        <button class="lb-toggle-btn" id="rent-period-2" onclick="setRentPeriod(2)">2 mois</button>
+        <button class="lb-toggle-btn" id="rent-period-3" onclick="setRentPeriod(3)">3 mois</button>
+      </div>
+      <label class="wizard-label" id="rent-revenue-label">Revenus ce mois</label>
+      <input id="rw-revenue" type="number" inputmode="decimal" class="wizard-input" placeholder="15 000">
+    </div>
+    <div class="wizard-field">
+      <label class="wizard-label">Devise</label>
+      <select id="rw-currency" class="field-select"></select>
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-next" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)" onclick="rentWizardNext(1)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Frais professionnels -->
+  <div id="rws-2" class="wizard-step" style="display:none">
+    <div class="wizard-question">🚗 Frais professionnels</div>
+    <div class="wizard-hint">Essence, voiture, matériel, abonnements...</div>
+    <div id="rw-expenses-list"></div>
+    <button class="add-expense-btn" onclick="addRentExpense()">+ Ajouter un frais</button>
+    <div class="wizard-nav" style="margin-top:16px">
+      <button class="wizard-btn-back" onclick="rentWizardBack(2)">← Retour</button>
+      <button class="wizard-btn-next" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)" onclick="rentWizardNext(2)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Impôts & charges sociales -->
+  <div id="rws-3" class="wizard-step" style="display:none">
+    <div class="wizard-question">🏛️ Impôts & charges</div>
+    <div class="wizard-hint">Montants mensuels</div>
+    <div class="wizard-field">
+      <label class="wizard-label">מס הכנסה — Impôt sur le revenu</label>
+      <input id="rw-tax" type="number" inputmode="decimal" class="wizard-input" placeholder="0">
+    </div>
+    <div class="wizard-field">
+      <label class="wizard-label">ביטוח לאומי — Assurance nationale</label>
+      <input id="rw-bituach" type="number" inputmode="decimal" class="wizard-input" placeholder="0">
+    </div>
+    <div class="wizard-field">
+      <div class="wizard-toggle-row">
+        <div>
+          <div class="wizard-toggle-lbl">מע"מ — TVA</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Si tu collectes et reverses la TVA</div>
+        </div>
+        <button class="toggle" id="rw-vat-toggle" onclick="toggleWizardToggle('rw-vat-toggle','rw-vat-details',false)"></button>
+      </div>
+      <div id="rw-vat-details" style="display:none;margin-top:12px">
+        <label class="wizard-label">Montant TVA reversé ce mois</label>
+        <input id="rw-vat" type="number" inputmode="decimal" class="wizard-input" placeholder="0">
+      </div>
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-back" onclick="rentWizardBack(3)">← Retour</button>
+      <button class="wizard-btn-next" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)" onclick="rentWizardNext(3)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Épargne -->
+  <div id="rws-4" class="wizard-step" style="display:none">
+    <div class="wizard-question">🏦 Épargne & retraite</div>
+    <div class="wizard-hint">Montants mensuels mis de côté</div>
+    <div class="wizard-field">
+      <label class="wizard-label">פנסיה — Retraite</label>
+      <input id="rw-pension" type="number" inputmode="decimal" class="wizard-input" placeholder="0">
+    </div>
+    <div class="wizard-field">
+      <label class="wizard-label">Autres épargnes fixes</label>
+      <input id="rw-savings" type="number" inputmode="decimal" class="wizard-input" placeholder="0">
+    </div>
+    <div class="wizard-nav">
+      <button class="wizard-btn-back" onclick="rentWizardBack(4)">← Retour</button>
+      <button class="wizard-btn-next" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)" onclick="rentWizardNext(4)">Calculer 🔍</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Résultat -->
+  <div id="rws-5" style="display:none;padding-bottom:140px">
+    <div id="rent-result-card" class="result-card"></div>
+    <div class="result-breakdown" id="rent-breakdown"></div>
+    <div style="padding:16px">
+      <button onclick="navTo('home')" style="width:100%;padding:16px;border-radius:14px;border:none;background:var(--g4);font-family:Nunito,sans-serif;font-size:16px;font-weight:800;color:var(--g2);cursor:pointer;margin-bottom:10px">🏠 Retour à l'accueil</button>
+      <button onclick="rentWizardBack(5)" style="width:100%;padding:14px;border-radius:14px;border:1.5px solid var(--border);background:none;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:var(--text3);cursor:pointer">← Modifier</button>
+    </div>
+  </div>
 </div>
 
 <!-- NAV -->
@@ -1414,6 +1521,201 @@ function computeBudget(){
 }
 function closeBitQR(){ document.getElementById("bit-qr-overlay").classList.remove("show"); }
 // ============ END BUDGET CALCULATOR ============
+
+// ============ RENTABILITY CALCULATOR ============
+let rentData = {};
+let rentExpenses = [];
+let rentPeriod = 1;
+
+function openRentabilityWizard(){
+  const saved = window._S.settings.rentData;
+  if(saved){
+    rentData = saved.data || {};
+    rentExpenses = saved.expenses || [];
+    rentPeriod = saved.period || 1;
+    setTimeout(()=>prefillRentWizard(), 50);
+  } else {
+    rentData = {};
+    rentExpenses = [];
+    rentPeriod = 1;
+  }
+  buildCurrencySel("rw-currency");
+  setRentPeriod(rentPeriod);
+  renderRentExpenses();
+  showRentStep(1);
+  navTo("rentability");
+}
+
+function prefillRentWizard(){
+  if(rentData.revenue) setVal("rw-revenue", rentData.revenue);
+  if(rentData.currency) setVal("rw-currency", rentData.currency);
+  if(rentData.tax) setVal("rw-tax", rentData.tax);
+  if(rentData.bituach) setVal("rw-bituach", rentData.bituach);
+  if(rentData.vat) setVal("rw-vat", rentData.vat);
+  if(rentData.hasVat) setWToggle("rw-vat-toggle", "rw-vat-details", rentData.hasVat, false);
+  if(rentData.pension) setVal("rw-pension", rentData.pension);
+  if(rentData.savings) setVal("rw-savings", rentData.savings);
+}
+
+function setRentPeriod(n){
+  rentPeriod = n;
+  [1,2,3].forEach(i=>{
+    const btn = document.getElementById("rent-period-"+i);
+    if(btn) btn.className = "lb-toggle-btn"+(i===n?" sel":"");
+  });
+  const lbl = document.getElementById("rent-revenue-label");
+  if(lbl) lbl.textContent = n===1 ? "Revenus ce mois" : "Revenus sur "+n+" mois";
+}
+
+function showRentStep(step){
+  for(let i=1;i<=5;i++){
+    const el = document.getElementById("rws-"+i);
+    if(el) el.style.display = (i===step) ? "block" : "none";
+  }
+  const pct = Math.round((step/5)*100);
+  const prog = document.getElementById("rent-wizard-progress");
+  if(prog) prog.style.width = pct+"%";
+  const sub = document.getElementById("rent-wizard-sub");
+  if(sub) sub.textContent = "Étape "+step+" sur 5";
+  window.scrollTo(0,0);
+}
+
+function rentWizardNext(step){
+  saveRentStep(step);
+  if(step===4){ computeRentability(); showRentStep(5); }
+  else { showRentStep(step+1); }
+}
+function rentWizardBack(step){ showRentStep(step-1); }
+
+function saveRentStep(step){
+  const g = id => { const el=document.getElementById(id); return el?el.value:""; };
+  const tog = id => { const el=document.getElementById(id); return el?el.classList.contains("on"):false; };
+  if(step===1){
+    rentData.revenue = parseFloat(g("rw-revenue"))||0;
+    rentData.currency = g("rw-currency")||window._S.settings.currency;
+    rentData.period = rentPeriod;
+  }
+  if(step===3){
+    rentData.tax = parseFloat(g("rw-tax"))||0;
+    rentData.bituach = parseFloat(g("rw-bituach"))||0;
+    rentData.hasVat = tog("rw-vat-toggle");
+    rentData.vat = parseFloat(g("rw-vat"))||0;
+  }
+  if(step===4){
+    rentData.pension = parseFloat(g("rw-pension"))||0;
+    rentData.savings = parseFloat(g("rw-savings"))||0;
+  }
+  window._S.settings.rentData = { data: rentData, expenses: rentExpenses, period: rentPeriod };
+  saveAll();
+}
+
+function addRentExpense(){
+  rentExpenses.push({ id:Date.now(), label:"", amount:0 });
+  renderRentExpenses();
+}
+function removeRentExpense(id){ rentExpenses=rentExpenses.filter(e=>e.id!==id); renderRentExpenses(); }
+function renderRentExpenses(){
+  const list = document.getElementById("rw-expenses-list");
+  if(!list) return;
+  list.innerHTML = rentExpenses.map(e=>`
+    <div class="wizard-field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <input type="text" class="wizard-input sm" placeholder="Essence, téléphone..." value="${e.label||""}" oninput="updateRentExpense(${e.id},'label',this.value)" style="flex:1">
+        <button onclick="removeRentExpense(${e.id})" style="background:none;border:none;color:#EF476F;font-size:20px;cursor:pointer;padding:0 0 0 10px">×</button>
+      </div>
+      <label class="wizard-label">Montant mensuel</label>
+      <input type="number" inputmode="decimal" class="wizard-input sm" placeholder="0" value="${e.amount||""}" oninput="updateRentExpense(${e.id},'amount',parseFloat(this.value)||0)">
+    </div>`).join("");
+}
+function updateRentExpense(id, field, val){ const e=rentExpenses.find(x=>x.id===id); if(e) e[field]=val; }
+
+function computeRentability(){
+  saveRentStep(4);
+  const currency = rentData.currency || window._S.settings.currency;
+  const period = rentPeriod || 1;
+  
+  // Monthly average revenue
+  const monthlyRevenue = (rentData.revenue || 0) / period;
+  
+  const breakdown = [];
+  breakdown.push({ label:"💰 Revenus (moy. mensuelle)", amount:monthlyRevenue, type:"plus" });
+  
+  let totalDeductions = 0;
+  
+  // Professional expenses
+  const totalExpenses = rentExpenses.filter(e=>e.amount>0).reduce((s,e)=>s+e.amount,0);
+  if(totalExpenses>0){
+    rentExpenses.filter(e=>e.amount>0).forEach(e=>{
+      breakdown.push({ label:"🚗 "+( e.label||"Frais pro"), amount:e.amount, type:"minus" });
+      totalDeductions += e.amount;
+    });
+  }
+  
+  // Taxes
+  if(rentData.tax>0){
+    breakdown.push({ label:"🏛️ מס הכנסה — Impôt", amount:rentData.tax, type:"minus" });
+    totalDeductions += rentData.tax;
+  }
+  if(rentData.bituach>0){
+    breakdown.push({ label:"🛡️ ביטוח לאומי", amount:rentData.bituach, type:"minus" });
+    totalDeductions += rentData.bituach;
+  }
+  if(rentData.hasVat && rentData.vat>0){
+    breakdown.push({ label:'💱 מע"מ — TVA', amount:rentData.vat, type:"minus" });
+    totalDeductions += rentData.vat;
+  }
+  
+  // Savings
+  if(rentData.pension>0){
+    breakdown.push({ label:"🏦 פנסיה — Retraite", amount:rentData.pension, type:"minus" });
+    totalDeductions += rentData.pension;
+  }
+  if(rentData.savings>0){
+    breakdown.push({ label:"💎 Épargne fixe", amount:rentData.savings, type:"minus" });
+    totalDeductions += rentData.savings;
+  }
+  
+  const netRevenue = monthlyRevenue - totalDeductions;
+  const rentabilityRate = monthlyRevenue > 0 ? Math.round((netRevenue/monthlyRevenue)*100) : 0;
+  
+  breakdown.push({ label:"🏁 Revenu net mensuel", amount:netRevenue, type:"total" });
+
+  // Verdict
+  let verdict, emoji;
+  if(rentabilityRate >= 60){ verdict = "Excellente rentabilité ! 🚀"; emoji = "🟢"; }
+  else if(rentabilityRate >= 40){ verdict = "Bonne rentabilité 👍"; emoji = "🟡"; }
+  else if(rentabilityRate >= 20){ verdict = "Rentabilité correcte ⚠️"; emoji = "🟠"; }
+  else if(netRevenue > 0){ verdict = "Rentabilité faible — à surveiller"; emoji = "🔴"; }
+  else { verdict = "Activité non rentable ce mois ⚠️"; emoji = "🔴"; }
+
+  const isPositive = netRevenue >= 0;
+  const resultCard = document.getElementById("rent-result-card");
+  if(resultCard){
+    resultCard.style.background = isPositive
+      ? "linear-gradient(135deg,#9B5DE5,#F15BB5)"
+      : "linear-gradient(135deg,#EF476F,#c0392b)";
+    resultCard.innerHTML = `
+      <div style="font-size:13px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Revenu net mensuel</div>
+      <div class="result-amount" style="margin:12px 0">${isPositive?"+":""}${fmt(Math.round(netRevenue))} ${currency}</div>
+      <div style="font-size:20px;font-weight:900;margin-bottom:4px">${emoji} ${rentabilityRate}% de rentabilité</div>
+      <div style="font-size:14px;opacity:.85">${verdict}</div>
+      ${period>1?`<div style="font-size:12px;opacity:.7;margin-top:6px">Basé sur une moyenne sur ${period} mois</div>`:""}
+    `;
+  }
+
+  const breakdownEl = document.getElementById("rent-breakdown");
+  if(breakdownEl){
+    breakdownEl.innerHTML = `<div style="font-size:13px;font-weight:800;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Détail mensuel</div>`+
+    breakdown.map(r=>{
+      const cls = r.type==="plus"?"result-plus":r.type==="minus"?"result-minus":"";
+      const sign = r.type==="plus"?"+ ":r.type==="minus"?"- ":"";
+      const bold = r.type==="total"?"font-weight:800;font-size:16px;":"";
+      return `<div class="result-row" style="${bold}"><span>${r.label}</span><span class="${cls}">${sign}${fmt(Math.abs(Math.round(r.amount)))} ${currency}</span></div>`;
+    }).join("");
+  }
+}
+// ============ END RENTABILITY ============
+
 
 // ============ V4.3 ============
 
