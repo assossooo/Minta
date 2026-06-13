@@ -758,8 +758,14 @@ function loadData(){
         r.month=d.getMonth();
         r.year=d.getFullYear();
       }
-      r.month=parseInt(r.month);
-      r.year=parseInt(r.year);
+      if(r.month===undefined||r.month===null||isNaN(parseInt(r.month))){
+        const d=new Date(r.date||Date.now());
+        r.month=d.getMonth();
+        r.year=d.getFullYear();
+      } else {
+        r.month=parseInt(r.month);
+        r.year=parseInt(r.year);
+      }
       if(!r.amount)r.amount=parseFloat(r.total||r.sum||0);
       return r;
     });
@@ -964,7 +970,7 @@ function deleteEntry(id){
   showConfirm(()=>{
     const g=window._S.goals.find(x=>x.id===cGoalId);
     if(!g)return;
-    g.entries=(g.entries||[]).filter(e=>e.id!==id);
+    g.entries=(g.entries||[]).filter(e=>String(e.id)!==String(id));
     saveAll();renderDetail();
   });
 }
@@ -973,7 +979,7 @@ function deleteEntry(id){
 function openEditEntry(id){
   const g=window._S.goals.find(x=>x.id===cGoalId);
   if(!g)return;
-  const e=(g.entries||[]).find(x=>x.id===id);
+  const e=(g.entries||[]).find(x=>String(x.id)===String(id));
   if(!e)return;
   editEntryId=id;
   selEditEntryTag=e.tag||"";
@@ -985,7 +991,7 @@ function openEditEntry(id){
 function saveEditEntry(){
   const g=window._S.goals.find(x=>x.id===cGoalId);
   if(!g)return;
-  const e=(g.entries||[]).find(x=>x.id===editEntryId);
+  const e=(g.entries||[]).find(x=>String(x.id)===String(editEntryId));
   if(!e)return;
   e.amount=parseFloat(document.getElementById("ee-amount").value)||e.amount;
   e.note=document.getElementById("ee-note").value.trim();
@@ -1018,11 +1024,11 @@ function saveRevenue(){
   window._S.revenues.unshift(r);
   saveAll();renderRevenues();navTo("revenues");
 }
-function deleteRevenue(id){showConfirm(()=>{window._S.revenues=window._S.revenues.filter(r=>r.id!==id);saveAll();renderRevenues();});}
+function deleteRevenue(id){showConfirm(()=>{window._S.revenues=window._S.revenues.filter(r=>String(r.id)!==String(id));saveAll();renderRevenues();});}
 
 // ─── EDIT REVENUE — avec catégorie ───────────────────────────────
 function openEditRevenue(id){
-  const r=window._S.revenues.find(x=>x.id===id);
+  const r=window._S.revenues.find(x=>String(x.id)===String(id));
   if(!r)return;
   editRevenueId=id;
   selEditRevTag=r.tag||"";
@@ -1036,7 +1042,7 @@ function openEditRevenue(id){
   navTo("edit-revenue");
 }
 function saveEditRevenue(){
-  const r=window._S.revenues.find(x=>x.id===editRevenueId);
+  const r=window._S.revenues.find(x=>String(x.id)===String(editRevenueId));
   if(!r)return;
   r.amount=parseFloat(document.getElementById("er-amount").value)||r.amount;
   r.currency=document.getElementById("er-currency").value;
@@ -1095,7 +1101,7 @@ function renderRevenues(){
   if(!revs.length){list.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-title">Aucun revenu</div><div class="empty-sub">Appuie sur + pour ajouter</div></div>`;return;}
   [...revs].sort((a,b)=>b.year-a.year||b.month-a.month).forEach(r=>{
     const div=document.createElement("div");div.className="rev-entry";
-    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${Ms[parseInt(r.month)]||""} ${r.year||""}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
+    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${(parseInt(r.month)>=0&&parseInt(r.month)<=11)?Ms[parseInt(r.month)]+" "+(r.year||""):""}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
     list.appendChild(div);
   });
 }
@@ -1377,8 +1383,9 @@ function buildEditRevSelects(r){
   const ms=document.getElementById("er-period-month");const ys=document.getElementById("er-period-year");
   if(!ms||!ys)return;
   const Ms=getM();const now=new Date();const cy=now.getFullYear();
-  ms.innerHTML=Ms.map((m,i)=>`<option value="${i}"${i===r.month?" selected":""}>${m}</option>`).join("");
-  ys.innerHTML=[cy-2,cy-1,cy,cy+1].map(y=>`<option value="${y}"${y===r.year?" selected":""}>${y}</option>`).join("");
+  const rMonth=parseInt(r.month);const rYear=parseInt(r.year);
+  ms.innerHTML=Ms.map((m,i)=>`<option value="${i}"${i===rMonth?" selected":""}>${m}</option>`).join("");
+  ys.innerHTML=[cy-2,cy-1,cy,cy+1].map(y=>`<option value="${y}"${y===rYear?" selected":""}>${y}</option>`).join("");
 }
 function buildTagGrids(){
   buildTagGrid("ag-tag-grid",t=>{selTag=t;});
