@@ -224,6 +224,7 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="font-size:20px;font-weight:900;color:var(--g2)">Mes Revenus</div>
       <button class="icon-btn" onclick="openAddRevenue()">+</button>
+      <button class="icon-btn" onclick="openInvoiceGenerator()" title="Facture" style="background:linear-gradient(135deg,#1E3A5F,#2D5F8A);color:white">🧾</button>
     </div>
     <div style="display:flex;gap:8px">
       <button class="lb-toggle-btn sel" id="chart-btn-6m" onclick="setChartPeriod(6)">6 mois</button>
@@ -735,7 +736,34 @@ function saveCloud(){
 }
 function saveAll(){saveLocal();saveCloud();}
 function loadData(){
-  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&p.goals){window._S=p;if(!window._S.friends)window._S.friends=[];if(!window._S.pendingIn)window._S.pendingIn=[];if(!window._S.pendingOut)window._S.pendingOut=[];if(!window._S.sharedGoals)window._S.sharedGoals=[];if(!window._S.settings.pseudo)window._S.settings.pseudo="";if(window._S.settings.hideRevenues===undefined)window._S.settings.hideRevenues=false;}}}catch(e){}
+  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&p.goals){window._S=p;
+    if(!window._S.friends)window._S.friends=[];
+    if(!window._S.pendingIn)window._S.pendingIn=[];
+    if(!window._S.pendingOut)window._S.pendingOut=[];
+    if(!window._S.sharedGoals)window._S.sharedGoals=[];
+    if(!window._S.settings.pseudo)window._S.settings.pseudo="";
+    if(window._S.settings.hideRevenues===undefined)window._S.settings.hideRevenues=false;
+    // Migrate goals: fix undefined names
+    window._S.goals=window._S.goals.map(g=>{
+      if(!g.name&&g.title)g.name=g.title;
+      if(!g.name)g.name="Objectif";
+      if(!g.entries)g.entries=[];
+      if(!g.history)g.history=[];
+      return g;
+    });
+    // Migrate revenues: fix undefined month/year
+    window._S.revenues=window._S.revenues.map(r=>{
+      if(r.month===undefined||r.month===null){
+        const d=new Date(r.date||Date.now());
+        r.month=d.getMonth();
+        r.year=d.getFullYear();
+      }
+      r.month=parseInt(r.month);
+      r.year=parseInt(r.year);
+      if(!r.amount)r.amount=parseFloat(r.total||r.sum||0);
+      return r;
+    });
+  }}}catch(e){}
 }
 
 // ─── NAVIGATION ─────────────────────────────────────────────────
@@ -793,7 +821,7 @@ function renderHome(){
     const card=document.createElement("div");
     card.className="goal-card";
     card.onclick=()=>{cGoalId=g.id;renderDetail();navTo("detail");};
-    card.innerHTML=`<div class="card-top"><div class="card-left"><div class="card-emoji">${g.emoji||"💰"}</div><div><div class="card-name">${g.name}</div><div class="card-period">${g.currency||"₪"}${g.isRecurring?` · 🔄 ${g.recurringPeriod==="weekly"?"Hebdo":g.recurringPeriod==="yearly"?"Annuel":"Mensuel"}`:""}</div>${gT(g)}</div></div>${done?`<span class="badge-done" style="background:${color}">✓ Atteint</span>`:""}</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="card-amounts"><span class="card-current" style="color:${color}">${fmt(current)} ${g.currency||"₪"}</span><span class="card-target">/ ${fmt(target)} ${g.currency||"₪"}</span></div>${getDeadlineHtml(g)}`;
+    card.innerHTML=`<div class="card-top"><div class="card-left"><div class="card-emoji">${g.emoji||"💰"}</div><div><div class="card-name">${g.name||g.title||"Sans nom"}</div><div class="card-period">${g.currency||"₪"}${g.isRecurring?` · 🔄 ${g.recurringPeriod==="weekly"?"Hebdo":g.recurringPeriod==="yearly"?"Annuel":"Mensuel"}`:""}</div>${gT(g)}</div></div>${done?`<span class="badge-done" style="background:${color}">✓ Atteint</span>`:""}</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="card-amounts"><span class="card-current" style="color:${color}">${fmt(current)} ${g.currency||"₪"}</span><span class="card-target">/ ${fmt(target)} ${g.currency||"₪"}</span></div>${getDeadlineHtml(g)}`;
     list.appendChild(card);
   });
 }
@@ -810,7 +838,7 @@ function renderDetail(){
   const done=target>0&&current>=target;
   const cur=g.currency||"₪";
   document.getElementById("d-emoji").textContent=g.emoji||"💰";
-  document.getElementById("d-title").textContent=g.name;
+  document.getElementById("d-title").textContent=g.name||g.title||"Sans nom";
   document.getElementById("d-tag").innerHTML=gT(g);
   document.getElementById("d-period").textContent=g.isRecurring?`🔄 ${g.recurringPeriod==="weekly"?"Hebdomadaire":g.recurringPeriod==="yearly"?"Annuel":"Mensuel"}`:"";
   document.getElementById("d-amount-wrap").innerHTML=`<span style="color:${color}">${fmt(current)}</span> <span style="font-size:28px;color:var(--text3)">${cur}</span>`;
@@ -1034,13 +1062,13 @@ function renderRevenues(){
   const cur=window._S.settings.currency||"₪";
   const now=new Date();
   const cm=now.getMonth(),cy=now.getFullYear();
-  const thisMonth=revs.filter(r=>r.month===cm&&r.year===cy);
+  const thisMonth=revs.filter(r=>parseInt(r.month)===cm&&parseInt(r.year)===cy);
   const total=thisMonth.reduce((a,r)=>a+r.amount,0);
   document.getElementById("rev-total-val").textContent=fmt(total)+" "+cur;
   document.getElementById("rev-total-sub").textContent=thisMonth.length+" entrée"+(thisMonth.length>1?"s":"");
   // Compare
   const pm=cm===0?11:cm-1,py=cm===0?cy-1:cy;
-  const lastMonth=revs.filter(r=>r.month===pm&&r.year===py);
+  const lastMonth=revs.filter(r=>parseInt(r.month)===pm&&parseInt(r.year)===py);
   const lastTotal=lastMonth.reduce((a,r)=>a+r.amount,0);
   const delta=total-lastTotal;
   const cmp=document.getElementById("compare-row");
@@ -1051,7 +1079,7 @@ function renderRevenues(){
   for(let i=nMonths-1;i>=0;i--){let m=cm-i,y=cy;while(m<0){m+=12;y--;}months.push({m,y});}
   const bars=document.getElementById("chart-bars");
   bars.innerHTML="";
-  const vals=months.map(({m,y})=>revs.filter(r=>r.month===m&&r.year===y).reduce((a,r)=>a+r.amount,0));
+  const vals=months.map(({m,y})=>revs.filter(r=>parseInt(r.month)===m&&parseInt(r.year)===y).reduce((a,r)=>a+r.amount,0));
   const maxVal=Math.max(...vals,1);
   const Ms=getM();
   months.forEach(({m,y},i)=>{
@@ -1067,7 +1095,7 @@ function renderRevenues(){
   if(!revs.length){list.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-title">Aucun revenu</div><div class="empty-sub">Appuie sur + pour ajouter</div></div>`;return;}
   [...revs].sort((a,b)=>b.year-a.year||b.month-a.month).forEach(r=>{
     const div=document.createElement("div");div.className="rev-entry";
-    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${Ms[r.month]} ${r.year}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
+    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${(r.month!==undefined&&r.month!==null&&Ms[parseInt(r.month)])?Ms[parseInt(r.month)]+" "+(r.year||""):""}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
     list.appendChild(div);
   });
 }
@@ -1590,6 +1618,331 @@ function launchConfetti(){
   }
 }
 
+
+// ─── INVOICE GENERATOR ───────────────────────────────────────────
+let invLines = [];
+let invVat = false;
+
+function openInvoiceGenerator(){
+  invLines = [{desc:"", qty:1, price:0}];
+  invVat = false;
+  document.getElementById("inv-vat-toggle").classList.remove("on");
+  document.getElementById("inv-vat-row").style.display = "none";
+  // Set today's date
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("inv-date").value = today;
+  document.getElementById("inv-client").value = "";
+  document.getElementById("inv-notes").value = "";
+  document.getElementById("inv-bank-details").value = "";
+  // Auto-increment invoice number from revenues
+  const nums = (window._S.revenues||[]).map(r=>parseInt(r.invoiceNum||0)).filter(Boolean);
+  const lastNum = nums.length ? Math.max(...nums) : 30004;
+  document.getElementById("inv-number").value = lastNum + 1;
+  renderInvLines();
+  updateInvPreview();
+  navTo("invoice");
+}
+
+function toggleInvVat(){
+  invVat = !invVat;
+  document.getElementById("inv-vat-toggle").classList.toggle("on", invVat);
+  document.getElementById("inv-vat-row").style.display = invVat ? "flex" : "none";
+  updateInvPreview();
+}
+
+function addInvLine(){
+  invLines.push({desc:"", qty:1, price:0});
+  renderInvLines();
+}
+
+function removeInvLine(i){
+  invLines.splice(i,1);
+  renderInvLines();
+  updateInvPreview();
+}
+
+function renderInvLines(){
+  const list = document.getElementById("inv-lines-list");
+  list.innerHTML = "";
+  invLines.forEach((line, i) => {
+    const div = document.createElement("div");
+    div.className = "wizard-field";
+    div.style.marginBottom = "10px";
+    div.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input type="text" class="field-input md" style="flex:3" placeholder="תיאור / Description" value="${line.desc}"
+          oninput="invLines[${i}].desc=this.value;updateInvPreview()">
+        ${invLines.length > 1 ? `<button onclick="removeInvLine(${i})" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer">✕</button>` : ""}
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <label class="wizard-label" style="font-size:9px">כמות / QTÉ</label>
+          <input type="number" inputmode="decimal" class="field-input" style="font-size:18px" value="${line.qty}"
+            oninput="invLines[${i}].qty=parseFloat(this.value)||1;updateInvPreview()">
+        </div>
+        <div style="flex:2">
+          <label class="wizard-label" style="font-size:9px">מחיר / PRIX ₪</label>
+          <input type="number" inputmode="decimal" class="field-input" style="font-size:18px" value="${line.price||""}"
+            placeholder="0" oninput="invLines[${i}].price=parseFloat(this.value)||0;updateInvPreview()">
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px">
+          <label class="wizard-label" style="font-size:9px">סה"כ</label>
+          <div style="font-size:15px;font-weight:800;color:var(--g2)">${fmt(line.qty * line.price)}</div>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function updateInvPreview(){
+  const subtotal = invLines.reduce((a,l) => a + (l.qty * l.price), 0);
+  const vat = invVat ? subtotal * 0.18 : 0;
+  const total = subtotal + vat;
+  const invCurSel = document.getElementById("inv-currency");
+  const cur = invCurSel ? (invCurSel.value === "EUR" ? "€" : invCurSel.value === "USD" ? "$" : "₪") : "₪";
+  document.getElementById("inv-subtotal").textContent = fmt(subtotal) + " " + cur;
+  document.getElementById("inv-vat-amount").textContent = fmt(vat) + " " + cur;
+  document.getElementById("inv-total").textContent = fmt(total) + " " + cur;
+  // Re-render lines for totals
+  document.querySelectorAll("#inv-lines-list .wizard-field").forEach((el, i) => {
+    const totalEl = el.querySelector("div[style*='font-size:15px']");
+    if(totalEl && invLines[i]) totalEl.textContent = fmt(invLines[i].qty * invLines[i].price) + " ₪";
+  });
+}
+
+function generateInvoicePNG(){
+  // Save biz info for next time
+  localStorage.setItem("minta-biz-info", JSON.stringify({
+    name: document.getElementById("inv-biz-name").value.trim(),
+    num: document.getElementById("inv-biz-num").value.trim(),
+    address: document.getElementById("inv-biz-address").value.trim(),
+    phone: document.getElementById("inv-biz-phone").value.trim(),
+    email: document.getElementById("inv-biz-email").value.trim(),
+  }));
+  const clientAddress2 = document.getElementById("inv-client-address").value.trim();
+  const clientNum2 = document.getElementById("inv-client-num").value.trim();
+  const invPeriod2 = document.getElementById("inv-period").value.trim();
+  const invCurrencyVal = document.getElementById("inv-currency").value || "ILS";
+  const client = document.getElementById("inv-client").value.trim() || "—";
+  const invNum = document.getElementById("inv-number").value.trim();
+  const invDate = document.getElementById("inv-date").value;
+  const notes = document.getElementById("inv-notes").value.trim();
+  const payMethod = document.getElementById("inv-payment-method").value;
+  const bankDetails = document.getElementById("inv-bank-details").value.trim();
+  const subtotal = invLines.reduce((a,l) => a + (l.qty * l.price), 0);
+  const vatAmt = invVat ? subtotal * 0.18 : 0;
+  const total = subtotal + vatAmt;
+  const cur = window._S.settings.currency || "₪";
+
+  // Format date DD/MM/YYYY
+  const dateObj = invDate ? new Date(invDate) : new Date();
+  const dateStr = dateObj.toLocaleDateString("fr-FR");
+
+  // Canvas
+  const W = 800, H = Math.max(1100, 700 + invLines.length * 50 + (notes ? 60 : 0));
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  // RTL helpers
+  function rtlText(text, x, y, maxW) {
+    ctx.save();
+    ctx.direction = "rtl";
+    ctx.fillText(text, x, y, maxW);
+    ctx.restore();
+  }
+
+  // Header box
+  const grad = ctx.createLinearGradient(0, 0, W, 120);
+  grad.addColorStop(0, "#1E3A5F");
+  grad.addColorStop(1, "#2D5F8A");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, 130);
+
+  // Company info - dynamic from form
+  const bizName = document.getElementById("inv-biz-name").value.trim() || "";
+  const bizNum = document.getElementById("inv-biz-num").value.trim();
+  const bizAddress = document.getElementById("inv-biz-address").value.trim();
+  const bizPhone = document.getElementById("inv-biz-phone").value.trim();
+  const bizEmail = document.getElementById("inv-biz-email").value.trim();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px Arial";
+  ctx.textAlign = "right";
+  if(bizName) ctx.fillText(bizName, W - 30, 45);
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  let headerY = bizName ? 70 : 45;
+  if(bizNum){ ctx.fillText("עוסק מורשה: " + bizNum, W - 30, headerY); headerY += 22; }
+  if(bizAddress){ ctx.fillText(bizAddress, W - 30, headerY); headerY += 22; }
+  const contactLine = [bizPhone, bizEmail].filter(Boolean).join("  |  ");
+  if(contactLine) ctx.fillText(contactLine, W - 30, headerY);
+
+  // Minta logo area (left)
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  ctx.beginPath();
+  ctx.arc(65, 65, 45, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText("🌿 MINTA", 30, 70);
+
+  // Date
+  ctx.fillStyle = "#333333";
+  ctx.font = "15px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(dateStr, 30, 165);
+
+  // Invoice title
+  ctx.fillStyle = "#1E3A5F";
+  ctx.font = "bold 26px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("חשבונית מס קבלה מספר " + invNum, W/2, 220);
+
+  // Client section
+  const clientAddress = document.getElementById("inv-client-address").value.trim();
+  const clientNum = document.getElementById("inv-client-num").value.trim();
+  const invPeriod = document.getElementById("inv-period").value.trim();
+  const invCurrency = document.getElementById("inv-currency").value || "ILS";
+  const curSymbol = invCurrency === "EUR" ? "€" : invCurrency === "USD" ? "$" : "₪";
+
+  ctx.fillStyle = "#555555";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText(":עבור", W - 30, 278);
+  ctx.fillStyle = "#1E3A5F";
+  ctx.font = "bold 18px Arial";
+  ctx.fillText(client, W - 30, 302);
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#444";
+  let clientY = 322;
+  if(clientAddress){ ctx.fillText(clientAddress, W - 30, clientY); clientY += 20; }
+  if(clientNum){ ctx.fillStyle="#888"; ctx.font="13px Arial"; ctx.fillText("עוסק מורשה: " + clientNum, W - 30, clientY); clientY += 20; }
+  if(invPeriod){ ctx.fillStyle="#666"; ctx.font="13px Arial"; ctx.fillText("עבור התקופה: " + invPeriod, W - 30, clientY); clientY += 20; }
+
+  // Table header
+  const tableTop = 340;
+  ctx.fillStyle = "#1E3A5F";
+  ctx.fillRect(30, tableTop, W - 60, 38);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText("פירוט", W - 50, tableTop + 24);
+  ctx.textAlign = "center";
+  ctx.fillText("כמות", W/2 + 80, tableTop + 24);
+  ctx.fillText("מחיר", W/2 - 20, tableTop + 24);
+  ctx.textAlign = "left";
+  ctx.fillText('סה"כ שח', 50, tableTop + 24);
+
+  // Table rows
+  let rowY = tableTop + 38;
+  invLines.forEach((line, i) => {
+    const lineTotal = line.qty * line.price;
+    ctx.fillStyle = i % 2 === 0 ? "#f8f9fa" : "#ffffff";
+    ctx.fillRect(30, rowY, W - 60, 40);
+    ctx.fillStyle = "#333333";
+    ctx.font = "15px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(line.desc || "—", W - 50, rowY + 25);
+    ctx.textAlign = "center";
+    ctx.fillText(line.qty.toString(), W/2 + 80, rowY + 25);
+    ctx.fillText(fmt(line.price), W/2 - 20, rowY + 25);
+    ctx.textAlign = "left";
+    ctx.fillText(fmt(lineTotal), 50, rowY + 25);
+    rowY += 40;
+  });
+
+  // Border around table
+  ctx.strokeStyle = "#dee2e6";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(30, tableTop, W - 60, rowY - tableTop);
+
+  // Subtotals
+  rowY += 20;
+  const drawTotalRow = (label, value, bold, color) => {
+    if(bold){ctx.font = "bold 16px Arial";}else{ctx.font = "15px Arial";}
+    ctx.fillStyle = color || "#333333";
+    ctx.textAlign = "right";
+    ctx.fillText(label, W - 50, rowY);
+    ctx.textAlign = "left";
+    ctx.fillText(fmt(value), 50, rowY);
+    rowY += 30;
+  };
+  drawTotalRow("סך לפני מעמ", subtotal, false);
+  if(invVat) drawTotalRow("מעמ 18%", vatAmt, false, "#666666");
+
+  // Total line
+  ctx.fillStyle = "#1E3A5F";
+  ctx.fillRect(30, rowY - 8, W - 60, 2);
+  rowY += 10;
+  ctx.fillStyle = "#1E3A5F";
+  ctx.font = "bold 20px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText('סה"כ', W - 50, rowY);
+  ctx.textAlign = "left";
+  ctx.fillText(fmt(total) + " " + curSymbol, 50, rowY);
+  rowY += 40;
+
+  // Payment section
+  if(payMethod){
+    ctx.fillStyle = "#1E3A5F";
+    ctx.font = "bold 15px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText("פרטי תשלום", W - 30, rowY);
+    rowY += 25;
+    ctx.fillStyle = "#f8f9fa";
+    ctx.fillRect(30, rowY, W - 60, 40);
+    ctx.strokeRect(30, rowY, W - 60, 40);
+    ctx.fillStyle = "#333";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(payMethod, W - 50, rowY + 25);
+    ctx.textAlign = "center";
+    ctx.fillText(bankDetails, W/2, rowY + 25);
+    ctx.textAlign = "left";
+    ctx.fillText(fmt(total) + " " + curSymbol, 50, rowY + 25);
+    rowY += 60;
+  }
+
+  // Notes
+  if(notes){
+    ctx.fillStyle = "#1E3A5F";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText("הערות", W - 30, rowY);
+    rowY += 22;
+    ctx.fillStyle = "#555";
+    ctx.font = "13px Arial";
+    ctx.fillText(notes, W - 30, rowY);
+    rowY += 40;
+  }
+
+  // Footer
+  ctx.fillStyle = "#e9ecef";
+  ctx.fillRect(0, H - 50, W, 50);
+  ctx.fillStyle = "#888";
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("מסמך זה הופק על ידי Minta · minta-app.com", W/2, H - 22);
+
+  // iOS Safari fix: overlay avec appui long pour sauvegarder
+  const dataUrl = canvas.toDataURL("image/png");
+  const existOv = document.getElementById("inv-png-overlay");
+  if(existOv) existOv.remove();
+  const ov = document.createElement("div");
+  ov.id = "inv-png-overlay";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:24px;";
+  ov.innerHTML = '<div style="color:white;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;text-align:center;margin-bottom:16px;line-height:1.6">📥 Appui long sur l\'image → <b>Enregistrer l\'image</b><br><span style="font-size:12px;opacity:.7">לחיצה ארוכה על התמונה לשמירה</span></div>' +
+    '<img src="' + dataUrl + '" style="width:100%;max-width:580px;border-radius:12px;">' +
+    '<button onclick="document.getElementById(\'inv-png-overlay\').remove()" style="margin-top:20px;margin-bottom:40px;background:rgba(255,255,255,.15);border:none;border-radius:12px;padding:14px 32px;font-family:Nunito,sans-serif;font-size:15px;font-weight:700;color:white;cursor:pointer">✕ Fermer</button>';
+  document.body.appendChild(ov);
+}
+
 // ─── INIT ────────────────────────────────────────────────────────
 loadData();
 applyTheme();
@@ -1613,5 +1966,147 @@ renderRevenues();
 renderBadges();
 trySetupAuth();
 </script>
+
+<!-- INVOICE GENERATOR -->
+<div class="view" id="v-invoice">
+  <div class="rev-header" style="background:linear-gradient(135deg,#1E3A5F,#2D5F8A);color:white;padding:max(env(safe-area-inset-top),44px) 20px 20px">
+    <button class="back-btn" onclick="navTo('revenues')" style="color:rgba(255,255,255,.8);margin-bottom:14px">← חזור / Retour</button>
+    <div style="font-size:22px;font-weight:900">🧾 יצירת חשבונית</div>
+    <div style="font-size:13px;opacity:.75;margin-top:4px">Générer une facture</div>
+  </div>
+  <div style="padding:16px 16px 0">
+
+    <!-- BUSINESS INFO -->
+    <div class="settings-section">
+      <div class="section-title">פרטי המפיק — MES INFORMATIONS</div>
+      <div class="wizard-field">
+        <label class="wizard-label">שם / Nom</label>
+        <input id="inv-biz-name" type="text" class="field-input md" placeholder="Jean Dupont" oninput="updateInvPreview()">
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">עוסק מורשה / N° entreprise</label>
+        <input id="inv-biz-num" type="text" class="field-input md" placeholder="123456789" oninput="updateInvPreview()">
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">כתובת / Adresse</label>
+        <input id="inv-biz-address" type="text" class="field-input md" placeholder="רחוב הרצל 1, תל אביב" oninput="updateInvPreview()">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1" class="wizard-field">
+          <label class="wizard-label">טל / Tél</label>
+          <input id="inv-biz-phone" type="text" class="field-input md" placeholder="050-000-0000" oninput="updateInvPreview()">
+        </div>
+        <div style="flex:1" class="wizard-field">
+          <label class="wizard-label">דואל / Email</label>
+          <input id="inv-biz-email" type="text" class="field-input md" placeholder="exemple@email.com" oninput="updateInvPreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENT -->
+    <div class="settings-section">
+      <div class="section-title">עבור — CLIENT</div>
+      <div class="wizard-field">
+        <label class="wizard-label">שם לקוח / Nom</label>
+        <input id="inv-client" type="text" class="field-input md" placeholder="Wolt, Brawo..." oninput="updateInvPreview()">
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">כתובת לקוח / Adresse client</label>
+        <input id="inv-client-address" type="text" class="field-input md" placeholder="רחוב המלאכה 8, תל אביב" oninput="updateInvPreview()">
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">עוסק מורשה לקוח / N° client (optionnel)</label>
+        <input id="inv-client-num" type="text" class="field-input md" placeholder="515887156" oninput="updateInvPreview()">
+      </div>
+    </div>
+
+    <!-- INVOICE INFO -->
+    <div class="settings-section">
+      <div class="section-title">פרטי חשבונית — DÉTAILS</div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1" class="wizard-field">
+          <label class="wizard-label">מספר / Numéro</label>
+          <input id="inv-number" type="text" class="field-input md" placeholder="100001" oninput="updateInvPreview()">
+        </div>
+        <div style="flex:1" class="wizard-field">
+          <label class="wizard-label">תאריך / Date</label>
+          <input id="inv-date" type="date" class="field-input" style="font-size:15px" oninput="updateInvPreview()">
+        </div>
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">עבור התקופה / Période (optionnel)</label>
+        <input id="inv-period" type="text" class="field-input md" placeholder="01.06.2026 — 07.06.2026" oninput="updateInvPreview()">
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">מטבע / Devise</label>
+        <select id="inv-currency" class="field-select" onchange="updateInvPreview()">
+          <option value="ILS">₪ ILS — Shekel</option>
+          <option value="EUR">€ EUR — Euro</option>
+          <option value="USD">$ USD — Dollar</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LINES -->
+    <div class="settings-section">
+      <div class="section-title">פירוט — LIGNES</div>
+      <div id="inv-lines-list"></div>
+      <button class="add-expense-btn" onclick="addInvLine()" style="margin-top:8px">+ הוסף שורה / Ajouter une ligne</button>
+    </div>
+
+    <!-- TVA -->
+    <div class="settings-section">
+      <div class="wizard-field">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:15px;font-weight:700">מע"מ 18% / TVA 18%</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">Inclure la TVA</div>
+          </div>
+          <button class="toggle" id="inv-vat-toggle" onclick="toggleInvVat()"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="settings-section">
+      <div class="section-title">אמצעי תשלום — PAIEMENT</div>
+      <div class="wizard-field">
+        <label class="wizard-label">אמצעי / Moyen</label>
+        <select id="inv-payment-method" class="field-select" onchange="updateInvPreview()">
+          <option value="העברה בנקאית">העברה בנקאית — Virement</option>
+          <option value="מזומן">מזומן — Espèces</option>
+          <option value="צ'ק">צ'ק — Chèque</option>
+          <option value="Bit">Bit</option>
+          <option value="PayPal">PayPal</option>
+        </select>
+      </div>
+      <div class="wizard-field">
+        <label class="wizard-label">פרטי בנק / Détails (optionnel)</label>
+        <input id="inv-bank-details" type="text" class="field-input md" placeholder="חשבון 00000 בנק 12 סניף 000" oninput="updateInvPreview()">
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="settings-section">
+      <div class="section-title">הערות — NOTES</div>
+      <div class="wizard-field">
+        <input id="inv-notes" type="text" class="field-input md" placeholder="מידע נוסף..." oninput="updateInvPreview()">
+      </div>
+    </div>
+
+    <!-- PREVIEW TOTALS -->
+    <div class="result-breakdown" id="inv-totals" style="margin:0 0 16px">
+      <div class="result-row"><span>סך לפני מעמ</span><span id="inv-subtotal">0 ₪</span></div>
+      <div class="result-row" id="inv-vat-row" style="display:none"><span>מעמ 18%</span><span class="result-minus" id="inv-vat-amount">0 ₪</span></div>
+      <div class="result-row"><span style="font-weight:900">סה"כ</span><span style="font-weight:900;color:var(--g2)" id="inv-total">0 ₪</span></div>
+    </div>
+
+    <!-- GENERATE -->
+    <button onclick="generateInvoicePNG()" style="width:100%;padding:18px;border:none;border-radius:16px;font-family:Nunito,sans-serif;font-size:17px;font-weight:800;background:linear-gradient(135deg,#1E3A5F,#2D5F8A);color:white;cursor:pointer;margin-bottom:32px">
+      📥 הורד PNG / Télécharger PNG
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
