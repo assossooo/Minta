@@ -1095,7 +1095,7 @@ function renderRevenues(){
   if(!revs.length){list.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-title">Aucun revenu</div><div class="empty-sub">Appuie sur + pour ajouter</div></div>`;return;}
   [...revs].sort((a,b)=>b.year-a.year||b.month-a.month).forEach(r=>{
     const div=document.createElement("div");div.className="rev-entry";
-    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${(r.month!==undefined&&r.month!==null&&Ms[parseInt(r.month)])?Ms[parseInt(r.month)]+" "+(r.year||""):""}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
+    div.innerHTML=`<div><div class="rev-amount">+${fmt(r.amount)} ${r.currency||cur}</div><div class="rev-meta">${Ms[parseInt(r.month)]||""} ${r.year||""}${r.source?" · "+r.source:""}${r.note?" · "+r.note:""}</div>${r.tag?`<span class="entry-tag">${r.tag}</span>`:""}</div><div style="display:flex;gap:8px;align-items:center"><button class="del-btn" onclick="openEditRevenue('${r.id}')">✏️</button><button class="del-btn" onclick="deleteRevenue('${r.id}')">✕</button></div>`;
     list.appendChild(div);
   });
 }
