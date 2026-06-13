@@ -1621,6 +1621,7 @@ function launchConfetti(){
 
 // ─── INVOICE GENERATOR ───────────────────────────────────────────
 let invLines = [];
+let invLang = 'he';
 let invVat = false;
 
 function openInvoiceGenerator(){
@@ -1638,9 +1639,18 @@ function openInvoiceGenerator(){
   const nums = (window._S.revenues||[]).map(r=>parseInt(r.invoiceNum||0)).filter(Boolean);
   const lastNum = nums.length ? Math.max(...nums) : 30004;
   document.getElementById("inv-number").value = lastNum + 1;
+  invLang = 'he';
+  document.getElementById("inv-lang-he").classList.add("sel");
+  document.getElementById("inv-lang-fr").classList.remove("sel");
   renderInvLines();
   updateInvPreview();
   navTo("invoice");
+}
+
+function setInvLang(lang){
+  invLang = lang;
+  document.getElementById("inv-lang-he").classList.toggle("sel", lang==="he");
+  document.getElementById("inv-lang-fr").classList.toggle("sel", lang==="fr");
 }
 
 function toggleInvVat(){
@@ -1711,6 +1721,24 @@ function updateInvPreview(){
 }
 
 function generateInvoicePNG(){
+  // Bilingual labels
+  const IL = {
+    invoiceTitle: invLang==="he" ? "חשבונית מס קבלה מספר " : "Facture N° ",
+    forClient: invLang==="he" ? IL.forClient : "Client :",
+    details: invLang==="he" ? IL.details : "Description",
+    qty: invLang==="he" ? IL.qty : "Qté",
+    price: invLang==="he" ? IL.price : "Prix",
+    total: invLang==="he" ? IL.total : "Total",
+    subtotal: invLang==="he" ? IL.subtotal : "Sous-total HT",
+    vat: invLang==="he" ? IL.vat : "TVA 18%",
+    grandTotal: invLang==="he" ? IL.grandTotal : "Total TTC",
+    payment: invLang==="he" ? IL.payment : "Paiement",
+    notes: invLang==="he" ? IL.notes : "Notes",
+    period: invLang==="he" ? "עבור התקופה: " : "Période : ",
+    osek: invLang==="he" ? "עוסק מורשה: " : "N° entreprise : ",
+    footer: invLang==="he" ? IL.footer : "Document généré par Minta · minta-app.com",
+  };
+  const isHe = invLang === "he";
   // Save biz info for next time
   localStorage.setItem("minta-biz-info", JSON.stringify({
     name: document.getElementById("inv-biz-name").value.trim(),
@@ -1777,7 +1805,7 @@ function generateInvoicePNG(){
   ctx.font = "16px Arial";
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   let headerY = bizName ? 70 : 45;
-  if(bizNum){ ctx.fillText("עוסק מורשה: " + bizNum, W - 30, headerY); headerY += 22; }
+  if(bizNum){ ctx.fillText(IL.osek + bizNum, W - 30, headerY); headerY += 22; }
   if(bizAddress){ ctx.fillText(bizAddress, W - 30, headerY); headerY += 22; }
   const contactLine = [bizPhone, bizEmail].filter(Boolean).join("  |  ");
   if(contactLine) ctx.fillText(contactLine, W - 30, headerY);
@@ -1802,7 +1830,8 @@ function generateInvoicePNG(){
   ctx.fillStyle = "#1E3A5F";
   ctx.font = "bold 26px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("חשבונית מס קבלה מספר " + invNum, W/2, 220);
+  const invTitleFr = invLang==="fr" ? "Facture N° " + invNum : "חשבונית מס קבלה מספר " + invNum;
+  ctx.fillText(invTitleFr, W/2, 220);
 
   // Client section
   const clientAddress = document.getElementById("inv-client-address").value.trim();
@@ -1813,17 +1842,19 @@ function generateInvoicePNG(){
 
   ctx.fillStyle = "#555555";
   ctx.font = "14px Arial";
-  ctx.textAlign = "right";
-  ctx.fillText(":עבור", W - 30, 278);
+  const cAlign = isHe ? "right" : "left";
+  const cX = isHe ? W-30 : 30;
+  ctx.textAlign = cAlign;
+  ctx.fillText(IL.forClient, cX, 278);
   ctx.fillStyle = "#1E3A5F";
   ctx.font = "bold 18px Arial";
-  ctx.fillText(client, W - 30, 302);
+  ctx.fillText(client, cX, 302);
   ctx.font = "14px Arial";
   ctx.fillStyle = "#444";
   let clientY = 322;
-  if(clientAddress){ ctx.fillText(clientAddress, W - 30, clientY); clientY += 20; }
-  if(clientNum){ ctx.fillStyle="#888"; ctx.font="13px Arial"; ctx.fillText("עוסק מורשה: " + clientNum, W - 30, clientY); clientY += 20; }
-  if(invPeriod){ ctx.fillStyle="#666"; ctx.font="13px Arial"; ctx.fillText("עבור התקופה: " + invPeriod, W - 30, clientY); clientY += 20; }
+  if(clientAddress){ ctx.fillText(clientAddress, cX, clientY); clientY += 20; }
+  if(clientNum){ ctx.fillStyle="#888"; ctx.font="13px Arial"; ctx.fillText(IL.osek+clientNum, cX, clientY); clientY += 20; }
+  if(invPeriod){ ctx.fillStyle="#666"; ctx.font="13px Arial"; ctx.fillText(IL.period+invPeriod, cX, clientY); clientY += 20; }
 
   // Table header
   const tableTop = 340;
@@ -1831,13 +1862,15 @@ function generateInvoicePNG(){
   ctx.fillRect(30, tableTop, W - 60, 38);
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 14px Arial";
-  ctx.textAlign = "right";
-  ctx.fillText("פירוט", W - 50, tableTop + 24);
-  ctx.textAlign = "center";
-  ctx.fillText("כמות", W/2 + 80, tableTop + 24);
-  ctx.fillText("מחיר", W/2 - 20, tableTop + 24);
-  ctx.textAlign = "left";
-  ctx.fillText('סה"כ שח', 50, tableTop + 24);
+  if(isHe){
+    ctx.textAlign="right"; ctx.fillText(IL.details, W-50, tableTop+24);
+    ctx.textAlign="center"; ctx.fillText(IL.qty, W/2+80, tableTop+24); ctx.fillText(IL.price, W/2-20, tableTop+24);
+    ctx.textAlign="left"; ctx.fillText(IL.total, 50, tableTop+24);
+  } else {
+    ctx.textAlign="left"; ctx.fillText(IL.details, 50, tableTop+24);
+    ctx.textAlign="center"; ctx.fillText(IL.qty, W/2-80, tableTop+24); ctx.fillText(IL.price, W/2+20, tableTop+24);
+    ctx.textAlign="right"; ctx.fillText(IL.total, W-50, tableTop+24);
+  }
 
   // Table rows
   let rowY = tableTop + 38;
@@ -1847,13 +1880,15 @@ function generateInvoicePNG(){
     ctx.fillRect(30, rowY, W - 60, 40);
     ctx.fillStyle = "#333333";
     ctx.font = "15px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText(line.desc || "—", W - 50, rowY + 25);
-    ctx.textAlign = "center";
-    ctx.fillText(line.qty.toString(), W/2 + 80, rowY + 25);
-    ctx.fillText(fmt(line.price), W/2 - 20, rowY + 25);
-    ctx.textAlign = "left";
-    ctx.fillText(fmt(lineTotal), 50, rowY + 25);
+    if(isHe){
+      ctx.textAlign="right"; ctx.fillText(line.desc||"—", W-50, rowY+25);
+      ctx.textAlign="center"; ctx.fillText(line.qty.toString(), W/2+80, rowY+25); ctx.fillText(fmt(line.price), W/2-20, rowY+25);
+      ctx.textAlign="left"; ctx.fillText(fmt(lineTotal), 50, rowY+25);
+    } else {
+      ctx.textAlign="left"; ctx.fillText(line.desc||"—", 50, rowY+25);
+      ctx.textAlign="center"; ctx.fillText(line.qty.toString(), W/2-80, rowY+25); ctx.fillText(fmt(line.price), W/2+20, rowY+25);
+      ctx.textAlign="right"; ctx.fillText(fmt(lineTotal), W-50, rowY+25);
+    }
     rowY += 40;
   });
 
@@ -1867,14 +1902,17 @@ function generateInvoicePNG(){
   const drawTotalRow = (label, value, bold, color) => {
     if(bold){ctx.font = "bold 16px Arial";}else{ctx.font = "15px Arial";}
     ctx.fillStyle = color || "#333333";
-    ctx.textAlign = "right";
-    ctx.fillText(label, W - 50, rowY);
-    ctx.textAlign = "left";
-    ctx.fillText(fmt(value), 50, rowY);
+    if(isHe){
+      ctx.textAlign="right"; ctx.fillText(label, W-50, rowY);
+      ctx.textAlign="left"; ctx.fillText(fmt(value), 50, rowY);
+    } else {
+      ctx.textAlign="left"; ctx.fillText(label, 50, rowY);
+      ctx.textAlign="right"; ctx.fillText(fmt(value), W-50, rowY);
+    }
     rowY += 30;
   };
-  drawTotalRow("סך לפני מעמ", subtotal, false);
-  if(invVat) drawTotalRow("מעמ 18%", vatAmt, false, "#666666");
+  drawTotalRow(IL.subtotal, subtotal, false);
+  if(invVat) drawTotalRow(IL.vat, vatAmt, false, "#666666");
 
   // Total line
   ctx.fillStyle = "#1E3A5F";
@@ -1882,30 +1920,36 @@ function generateInvoicePNG(){
   rowY += 10;
   ctx.fillStyle = "#1E3A5F";
   ctx.font = "bold 20px Arial";
-  ctx.textAlign = "right";
-  ctx.fillText('סה"כ', W - 50, rowY);
-  ctx.textAlign = "left";
-  ctx.fillText(fmt(total) + " " + curSymbol, 50, rowY);
+  if(isHe){
+    ctx.textAlign="right"; ctx.fillText(IL.grandTotal, W-50, rowY);
+    ctx.textAlign="left"; ctx.fillText(fmt(total)+" "+curSymbol, 50, rowY);
+  } else {
+    ctx.textAlign="left"; ctx.fillText(IL.grandTotal, 50, rowY);
+    ctx.textAlign="right"; ctx.fillText(fmt(total)+" "+curSymbol, W-50, rowY);
+  }
   rowY += 40;
 
   // Payment section
   if(payMethod){
     ctx.fillStyle = "#1E3A5F";
     ctx.font = "bold 15px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText("פרטי תשלום", W - 30, rowY);
+    if(isHe){ ctx.textAlign="right"; ctx.fillText(IL.payment, W-30, rowY); }
+    else { ctx.textAlign="left"; ctx.fillText(IL.payment, 30, rowY); }
     rowY += 25;
     ctx.fillStyle = "#f8f9fa";
-    ctx.fillRect(30, rowY, W - 60, 40);
-    ctx.strokeRect(30, rowY, W - 60, 40);
+    ctx.fillRect(30, rowY, W-60, 40);
+    ctx.strokeRect(30, rowY, W-60, 40);
     ctx.fillStyle = "#333";
     ctx.font = "14px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText(payMethod, W - 50, rowY + 25);
-    ctx.textAlign = "center";
-    ctx.fillText(bankDetails, W/2, rowY + 25);
-    ctx.textAlign = "left";
-    ctx.fillText(fmt(total) + " " + curSymbol, 50, rowY + 25);
+    if(isHe){
+      ctx.textAlign="right"; ctx.fillText(payMethod, W-50, rowY+25);
+      ctx.textAlign="center"; ctx.fillText(bankDetails, W/2, rowY+25);
+      ctx.textAlign="left"; ctx.fillText(fmt(total)+" "+curSymbol, 50, rowY+25);
+    } else {
+      ctx.textAlign="left"; ctx.fillText(payMethod, 50, rowY+25);
+      ctx.textAlign="center"; ctx.fillText(bankDetails, W/2, rowY+25);
+      ctx.textAlign="right"; ctx.fillText(fmt(total)+" "+curSymbol, W-50, rowY+25);
+    }
     rowY += 60;
   }
 
@@ -1913,12 +1957,13 @@ function generateInvoicePNG(){
   if(notes){
     ctx.fillStyle = "#1E3A5F";
     ctx.font = "bold 14px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText("הערות", W - 30, rowY);
+    if(isHe){ ctx.textAlign="right"; ctx.fillText(IL.notes, W-30, rowY); }
+    else { ctx.textAlign="left"; ctx.fillText(IL.notes, 30, rowY); }
     rowY += 22;
     ctx.fillStyle = "#555";
     ctx.font = "13px Arial";
-    ctx.fillText(notes, W - 30, rowY);
+    if(isHe){ ctx.textAlign="right"; ctx.fillText(notes, W-30, rowY); }
+    else { ctx.textAlign="left"; ctx.fillText(notes, 30, rowY); }
     rowY += 40;
   }
 
@@ -1928,7 +1973,17 @@ function generateInvoicePNG(){
   ctx.fillStyle = "#888";
   ctx.font = "12px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("מסמך זה הופק על ידי Minta · minta-app.com", W/2, H - 22);
+  ctx.fillText(IL.footer, W/2, H - 22);
+
+  // Text direction helpers
+  function drawLabel(text, x, y){ // Labels (always same side as language)
+    if(isHe){ ctx.textAlign="right"; ctx.fillText(text, W-30, y); }
+    else { ctx.textAlign="left"; ctx.fillText(text, 30, y); }
+  }
+  function drawValue(text, x, y){ // Values (opposite side)
+    if(isHe){ ctx.textAlign="left"; ctx.fillText(text, 50, y); }
+    else { ctx.textAlign="right"; ctx.fillText(text, W-50, y); }
+  }
 
   // iOS Safari fix: overlay avec appui long pour sauvegarder
   const dataUrl = canvas.toDataURL("image/png");
@@ -1975,6 +2030,15 @@ trySetupAuth();
     <div style="font-size:13px;opacity:.75;margin-top:4px">Générer une facture</div>
   </div>
   <div style="padding:16px 16px 0">
+
+    <!-- INVOICE LANGUAGE -->
+    <div class="settings-section">
+      <div class="section-title">שפת החשבונית — LANGUE DE LA FACTURE</div>
+      <div style="display:flex;gap:8px">
+        <button class="lb-toggle-btn sel" id="inv-lang-he" onclick="setInvLang('he')">🇮🇱 עברית</button>
+        <button class="lb-toggle-btn" id="inv-lang-fr" onclick="setInvLang('fr')">🇫🇷 Français</button>
+      </div>
+    </div>
 
     <!-- BUSINESS INFO -->
     <div class="settings-section">
