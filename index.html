@@ -372,6 +372,11 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
       <div class="section-title">Soutenir Minta</div>
       <div style="margin-bottom:8px;background:var(--card);border-radius:14px;padding:14px 16px;border:1px solid var(--border);box-shadow:var(--shadow)">
         <div style="font-size:13px;color:var(--text3);margin-bottom:12px">☕ Offrir un café à l'équipe Minta — l'app est gratuite et sans pub grâce à toi 🙏</div>
+        <a href="mailto:hello@minta-app.com" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:var(--g4);border:1.5px solid var(--g3);border-radius:12px;padding:14px;margin-bottom:12px">
+          <span style="font-size:24px">✉️</span>
+          <div style="flex:1"><div style="font-size:14px;font-weight:800;color:var(--g2)">Nous contacter</div><div style="font-size:12px;color:var(--text3);margin-top:2px">hello@minta-app.com</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Questions, suggestions, nouvelles fonctionnalités...</div></div>
+          <span style="color:var(--g2);font-size:16px">→</span>
+        </a>
         <a href="https://revolut.me/jeremy63zh" target="_blank" style="text-decoration:none;display:flex;align-items:center;gap:12px;background:#191C1F;border-radius:12px;padding:14px;margin-bottom:8px">
           <span style="font-size:24px">🔵</span><div style="flex:1"><div style="font-size:14px;font-weight:800;color:white">Revolut</div><div style="font-size:11px;color:rgba(255,255,255,.5)">revolut.me/...</div></div><span style="color:rgba(255,255,255,.4);font-size:16px">→</span>
         </a>
@@ -621,6 +626,8 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
         <button class="lb-toggle-btn sel" id="rent-period-1" onclick="setRentPeriod(1)">1 mois</button>
         <button class="lb-toggle-btn" id="rent-period-2" onclick="setRentPeriod(2)">2 mois</button>
         <button class="lb-toggle-btn" id="rent-period-3" onclick="setRentPeriod(3)">3 mois</button>
+        <button class="lb-toggle-btn" id="rent-period-6" onclick="setRentPeriod(6)">6 mois</button>
+        <button class="lb-toggle-btn" id="rent-period-12" onclick="setRentPeriod(12)">1 an</button>
       </div>
       <label class="wizard-label" id="rent-revenue-label">Revenus ce mois</label>
       <input id="rw-revenue" type="number" inputmode="decimal" class="wizard-input" placeholder="15 000">
@@ -644,6 +651,7 @@ body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-
       <div class="wizard-toggle-row"><div><div class="wizard-toggle-lbl">מע"מ — TVA</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Si tu collectes et reverses la TVA</div></div><button class="toggle" id="rw-vat-toggle" onclick="toggleWizardToggle('rw-vat-toggle','rw-vat-details',false)"></button></div>
       <div id="rw-vat-details" style="display:none;margin-top:12px"><label class="wizard-label">Montant TVA reversé</label><input id="rw-vat" type="number" inputmode="decimal" class="wizard-input" placeholder="0"></div>
     </div>
+    <div class="wizard-field"><label class="wizard-label">רואה חשבון / Comptable (mensuel)</label><input id="rw-accountant" type="number" inputmode="decimal" class="wizard-input" placeholder="0"></div>
     <div class="wizard-nav"><button class="wizard-btn-back" onclick="rentWizardBack(3)">← Retour</button><button class="wizard-btn-next" style="background:linear-gradient(135deg,#9B5DE5,#F15BB5)" onclick="rentWizardNext(3)">Suivant →</button></div>
   </div>
   <div id="rws-4" class="wizard-step" style="display:none">
@@ -733,7 +741,22 @@ const BADGES=[
 function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(window._S));}catch(e){}}
 function saveCloud(){
   if(!window._fbUser||!window._fbReady||!window._db)return;
-  try{window._db.collection("users").doc(window._fbUser.uid).set({data:JSON.stringify(window._S)},{merge:true});}catch(e){}
+  try{
+    // Save full data + public profile separately
+    const publicData={
+      pseudo:window._S.settings.pseudo||window._fbUser.displayName||"",
+      email:window._fbUser.email||"",
+      mintaCode:generateMintaCode(window._fbUser.uid),
+      hideRevenues:window._S.settings.hideRevenues||false,
+      // Only share revenue total if not hidden
+      totalRevenues:window._S.settings.hideRevenues?null:window._S.revenues.reduce((a,r)=>a+r.amount,0),
+      goalsCount:window._S.goals.length,
+    };
+    window._db.collection("users").doc(window._fbUser.uid).set({
+      data:JSON.stringify(window._S),
+      ...publicData
+    },{merge:true});
+  }catch(e){}
 }
 function saveAll(){saveLocal();saveCloud();}
 function loadData(){
@@ -759,17 +782,23 @@ function loadData(){
         r.month=d.getMonth();
         r.year=d.getFullYear();
       }
-      if(r.month===undefined||r.month===null||isNaN(parseInt(r.month))){
+      // Always parse to int to fix any type issues
+      const parsedMonth=parseInt(r.month);
+      const parsedYear=parseInt(r.year);
+      if(isNaN(parsedMonth)||parsedMonth<0||parsedMonth>11||isNaN(parsedYear)||parsedYear<2000){
         const d=new Date(r.date||Date.now());
         r.month=d.getMonth();
         r.year=d.getFullYear();
       } else {
-        r.month=parseInt(r.month);
-        r.year=parseInt(r.year);
+        r.month=parsedMonth;
+        r.year=parsedYear;
       }
-      if(!r.amount)r.amount=parseFloat(r.total||r.sum||0);
+      if(!r.amount||isNaN(r.amount))r.amount=parseFloat(r.total||r.sum||0);
+      if(!r.id)r.id=Date.now()+Math.random()+"";
       return r;
     });
+    // Persist migration immediately
+    try{localStorage.setItem(KEY,JSON.stringify(window._S));}catch(e){}
   }}}catch(e){}
 }
 
@@ -1156,10 +1185,78 @@ function renderLeaderboard(){
   });
 }
 function openAddFriend(){navTo("add-friend");}
-function searchFriend(){alert("Fonctionnalité disponible avec connexion Google");}
-function sendFriendRequest(){}
-function acceptFriendRequest(uid){window._S.pendingIn=(window._S.pendingIn||[]).filter(p=>(p.uid||p.email)!==uid);saveAll();renderFriendsView();}
-function declineFriendRequest(uid){window._S.pendingIn=(window._S.pendingIn||[]).filter(p=>(p.uid||p.email)!==uid);saveAll();renderFriendsView();}
+function searchFriend(){
+  if(!window._fbUser||!window._fbReady||!window._db){
+    alert("Tu dois être connecté avec Google pour ajouter des amis.");
+    return;
+  }
+  const val=document.getElementById("af-input").value.trim();
+  if(!val){alert("Saisis un email ou un code Minta.");return;}
+  const res=document.getElementById("af-result");
+  res.innerHTML='<div style="color:var(--text3);font-size:14px">🔍 Recherche...</div>';
+  // Search by email or Minta code
+  const isCode=val.toUpperCase().startsWith("MINTA#");
+  const field=isCode?"mintaCode":"email";
+  const searchVal=isCode?val.toUpperCase():val.toLowerCase();
+  window._db.collection("users").where(field,"==",searchVal).limit(1).get()
+  .then(snap=>{
+    if(snap.empty){
+      res.innerHTML='<div style="color:#EF476F;font-size:14px;padding:12px 0">❌ Utilisateur introuvable</div>';
+      return;
+    }
+    const doc=snap.docs[0];
+    const data=doc.data();
+    const uid=doc.id;
+    if(uid===window._fbUser.uid){res.innerHTML="<div style='color:#EF476F;font-size:14px;padding:12px 0'>❌ Impossible de t'ajouter toi-même</div>";return;}
+    const alreadyFriend=(window._S.friends||[]).some(f=>f.uid===uid);
+    if(alreadyFriend){res.innerHTML='<div style="color:var(--g1);font-size:14px;padding:12px 0">✅ Déjà dans tes amis</div>';return;}
+    const pseudo=data.pseudo||data.email||uid.substring(0,8);
+    res.innerHTML=`<div class="friend-card" style="margin-top:8px">
+      <div class="friend-avatar">${pseudo[0].toUpperCase()}</div>
+      <div><div class="friend-name">${pseudo}</div><div class="friend-sub">${data.email||""}</div></div>
+      <div class="friend-actions"><button class="friend-action-btn accept" onclick="sendFriendRequest('${uid}','${pseudo}','${data.email||""}')">+ Ajouter</button></div>
+    </div>`;
+  }).catch(e=>{res.innerHTML='<div style="color:#EF476F;font-size:14px;padding:12px 0">Erreur: '+e.message+'</div>';});
+}
+
+function sendFriendRequest(uid,pseudo,email){
+  if(!window._fbUser||!window._fbReady||!window._db)return;
+  const myData={uid:window._fbUser.uid,pseudo:window._S.settings.pseudo||window._fbUser.displayName||"",email:window._fbUser.email||"",mintaCode:generateMintaCode(window._fbUser.uid)};
+  // Add to their pendingIn
+  window._db.collection("users").doc(uid).update({
+    pendingIn:firebase.firestore.FieldValue.arrayUnion(myData)
+  }).then(()=>{
+    // Add to my pendingOut
+    if(!window._S.pendingOut)window._S.pendingOut=[];
+    window._S.pendingOut.push({uid,pseudo,email});
+    saveAll();
+    document.getElementById("af-result").innerHTML="<div style='color:var(--g1);font-size:14px;padding:12px 0'>✅ Demande envoyée !</div>";
+  }).catch(e=>{
+    // If user doc doesn't exist yet, create it
+    document.getElementById("af-result").innerHTML="<div style='color:#EF476F;font-size:14px;padding:12px 0'>Erreur: "+e.message+"</div>";
+  });
+}
+function acceptFriendRequest(uid){
+  const pending=(window._S.pendingIn||[]).find(p=>p.uid===uid);
+  window._S.pendingIn=(window._S.pendingIn||[]).filter(p=>p.uid!==uid);
+  if(pending){
+    if(!window._S.friends)window._S.friends=[];
+    window._S.friends.push(pending);
+    // Also add me to their friends in Firebase
+    if(window._fbUser&&window._fbReady&&window._db){
+      const myData={uid:window._fbUser.uid,pseudo:window._S.settings.pseudo||window._fbUser.displayName||"",email:window._fbUser.email||""};
+      window._db.collection("users").doc(uid).update({
+        friends:firebase.firestore.FieldValue.arrayUnion(myData),
+        pendingOut:firebase.firestore.FieldValue.arrayRemove({uid:window._fbUser.uid})
+      }).catch(()=>{});
+    }
+  }
+  saveAll();renderFriendsView();
+}
+function declineFriendRequest(uid){
+  window._S.pendingIn=(window._S.pendingIn||[]).filter(p=>p.uid!==uid);
+  saveAll();renderFriendsView();
+}
 function removeFriend(uid){showConfirm(()=>{window._S.friends=(window._S.friends||[]).filter(f=>(f.uid||f.email)!==uid);saveAll();renderFriendsView();});}
 
 // ─── SHARED GOALS ────────────────────────────────────────────────
@@ -1288,8 +1385,9 @@ function showRentStep(n){
 }
 function setRentPeriod(n){
   rentPeriod=n;
-  [1,2,3].forEach(i=>document.getElementById("rent-period-"+i).classList.toggle("sel",i===n));
-  document.getElementById("rent-revenue-label").textContent=n===1?"Revenus ce mois":n===2?"Revenus sur 2 mois":"Revenus sur 3 mois";
+  [1,2,3,6,12].forEach(i=>{const el=document.getElementById("rent-period-"+i);if(el)el.classList.toggle("sel",i===n);});
+  const labels={1:"Revenus ce mois",2:"Revenus sur 2 mois",3:"Revenus sur 3 mois",6:"Revenus sur 6 mois",12:"Revenus sur 1 an"};
+  document.getElementById("rent-revenue-label").textContent=labels[n]||"Revenus";
 }
 function rentWizardNext(step){
   if(step===1){rentData.revenue=parseFloat(document.getElementById("rw-revenue").value)||0;rentData.currency=document.getElementById("rw-currency").value;rentData.period=rentPeriod;showRentStep(2);}
@@ -1299,6 +1397,7 @@ function rentWizardNext(step){
     rentData.bituach=parseFloat(document.getElementById("rw-bituach").value)||0;
     const vatOn=document.getElementById("rw-vat-toggle").classList.contains("on");
     rentData.vat=vatOn?parseFloat(document.getElementById("rw-vat").value)||0:0;
+    rentData.accountant=parseFloat(document.getElementById("rw-accountant").value)||0;
     showRentStep(4);
   }
   else if(step===4){
@@ -1332,6 +1431,7 @@ function computeRentability(){
   if(rentData.bituach)rows+=`<div class="result-row"><span>Assurance nationale</span><span class="result-minus">-${fmt(rentData.bituach)} ${cur}</span></div>`;
   if(rentData.vat)rows+=`<div class="result-row"><span>TVA reversée</span><span class="result-minus">-${fmt(rentData.vat)} ${cur}</span></div>`;
   if(rentData.pension)rows+=`<div class="result-row"><span>Retraite</span><span class="result-minus">-${fmt(rentData.pension)} ${cur}</span></div>`;
+  if(rentData.accountant)rows+=`<div class="result-row"><span>Comptable</span><span class="result-minus">-${fmt(rentData.accountant)} ${cur}</span></div>`;
   if(rentData.savings)rows+=`<div class="result-row"><span>Épargne</span><span class="result-minus">-${fmt(rentData.savings)} ${cur}</span></div>`;
   rentExpenses.forEach(e=>{if(e.amount)rows+=`<div class="result-row"><span>${e.label||"Frais"}</span><span class="result-minus">-${fmt(e.amount)} ${cur}</span></div>`;});
   rows+=`<div class="result-row"><span>Net mensuel</span><span style="color:${ok?"#9B5DE5":"#EF476F"}">${fmt(net)} ${cur}</span></div>`;
