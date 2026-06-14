@@ -1664,18 +1664,24 @@ function doGoogleSignIn(){
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.addScope("email");
     provider.addScope("profile");
-    window._auth.signInWithPopup(provider)
+    // Force LOCAL persistence for iOS PWA
+    window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(()=>{
+      return window._auth.signInWithPopup(provider);
+    })
     .then(result=>{
       window._fbUser=result.user;
       updateAuthUI(result.user);
+      syncUserData(result.user);
     })
     .catch(e=>{
       console.error(e);
-      // Fallback redirect si popup bloqué
       if(e.code==="auth/popup-blocked"||e.code==="auth/popup-closed-by-user"){
-        window._auth.signInWithRedirect(provider);
+        // Fallback: redirect pour iOS PWA
+        window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+          .then(()=>window._auth.signInWithRedirect(provider))
+          .catch(()=>window._auth.signInWithRedirect(provider));
       } else {
-        alert("Erreur connexion: "+e.message);
+        alert("Erreur: "+e.message);
       }
     });
   }catch(e){console.error(e);alert("Erreur: "+e.message);}
@@ -1706,22 +1712,54 @@ function updateAuthUI(user){
 }
 function setupAuthListener(){
   if(!window._auth)return;
+
+  // Handle redirect result first (iOS PWA)
+  window._auth.getRedirectResult().then(result=>{
+    if(result&&result.user){
+      window._fbUser=result.user;
+      updateAuthUI(result.user);
+      syncUserData(result.user);
+    }
+  }).catch(e=>console.log("redirect result:",e.code));
+
+  // Then listen for auth state changes
   window._auth.onAuthStateChanged(user=>{
     window._fbUser=user||null;
     updateAuthUI(user);
-    if(user&&window._fbReady&&window._db){
-      window._db.collection("users").doc(user.uid).get().then(doc=>{
-        if(doc.exists&&doc.data().data){
-          try{const remote=JSON.parse(doc.data().data);if(remote&&remote.goals&&remote.goals.length>=window._S.goals.length){window._S=remote;if(!window._S.friends)window._S.friends=[];if(!window._S.pendingIn)window._S.pendingIn=[];if(!window._S.pendingOut)window._S.pendingOut=[];if(!window._S.sharedGoals)window._S.sharedGoals=[];saveLocal();renderHome();renderRevenues();renderBadges();}}catch(e){}
-        } else {saveCloud();}
-      }).catch(()=>{});
-    }
+    if(user) syncUserData(user);
   });
-  try{
-    window._auth.getRedirectResult().then(result=>{
-      if(result&&result.user){window._fbUser=result.user;updateAuthUI(result.user);}
-    }).catch(()=>{});
-  }catch(e){}
+}
+
+function syncUserData(user){
+  if(!window._fbReady||!window._db)return;
+  // Save user public profile so friends can find us
+  window._db.collection("users").doc(user.uid).set({
+    email:user.email||"",
+    pseudo:window._S.settings.pseudo||user.displayName||"",
+    mintaCode:generateMintaCode(user.uid),
+    hideRevenues:window._S.settings.hideRevenues||false,
+  },{merge:true}).catch(()=>{});
+  // Sync data
+  window._db.collection("users").doc(user.uid).get().then(doc=>{
+    if(doc.exists&&doc.data().data){
+      try{
+        const remote=JSON.parse(doc.data().data);
+        if(remote&&remote.goals&&remote.goals.length>=window._S.goals.length){
+          window._S=remote;
+          if(!window._S.friends)window._S.friends=[];
+          if(!window._S.pendingIn)window._S.pendingIn=[];
+          if(!window._S.pendingOut)window._S.pendingOut=[];
+          if(!window._S.sharedGoals)window._S.sharedGoals=[];
+          saveLocal();
+          renderHome();
+          renderRevenues();
+          renderBadges();
+        }
+      }catch(e){}
+    } else {
+      saveCloud();
+    }
+  }).catch(()=>{});
 }
 function trySetupAuth(){
   if(window._fbReady&&window._auth)setupAuthListener();
