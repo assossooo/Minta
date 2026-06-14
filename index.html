@@ -1666,26 +1666,10 @@ function doGoogleSignIn(){
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.addScope("email");
     provider.addScope("profile");
-    // Force LOCAL persistence for iOS PWA
-    window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(()=>{
-      return window._auth.signInWithPopup(provider);
-    })
-    .then(result=>{
-      window._fbUser=result.user;
-      updateAuthUI(result.user);
-      syncUserData(result.user);
-    })
-    .catch(e=>{
-      console.error(e);
-      if(e.code==="auth/popup-blocked"||e.code==="auth/popup-closed-by-user"){
-        // Fallback: redirect pour iOS PWA
-        window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-          .then(()=>window._auth.signInWithRedirect(provider))
-          .catch(()=>window._auth.signInWithRedirect(provider));
-      } else {
-        alert("Erreur: "+e.message);
-      }
-    });
+    // iOS PWA ne supporte pas signInWithPopup — on utilise redirect directement
+    window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(()=>window._auth.signInWithRedirect(provider))
+      .catch(()=>window._auth.signInWithRedirect(provider));
   }catch(e){console.error(e);alert("Erreur: "+e.message);}
 }
 function doGoogleSignOut(){
