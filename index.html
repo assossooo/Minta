@@ -1662,15 +1662,65 @@ function savePseudo(){
 // ─── AUTH ────────────────────────────────────────────────────────
 function doGoogleSignIn(){
   if(!window._fbReady||!window._auth){alert("Firebase non disponible");return;}
+  const isIOSPWA = window.navigator.standalone === true;
+  if(isIOSPWA){
+    // iOS PWA: afficher instructions pour se connecter via Safari
+    showIOSAuthGuide();
+    return;
+  }
   try{
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.addScope("email");
     provider.addScope("profile");
-    // iOS PWA ne supporte pas signInWithPopup — on utilise redirect directement
     window._auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(()=>window._auth.signInWithRedirect(provider))
-      .catch(()=>window._auth.signInWithRedirect(provider));
+      .then(()=>window._auth.signInWithPopup(provider))
+      .then(result=>{
+        window._fbUser=result.user;
+        updateAuthUI(result.user);
+        syncUserData(result.user);
+      })
+      .catch(e=>{
+        if(e.code==="auth/popup-blocked"){
+          window._auth.signInWithRedirect(provider);
+        } else {
+          alert("Erreur: "+e.message);
+        }
+      });
   }catch(e){console.error(e);alert("Erreur: "+e.message);}
+}
+
+function showIOSAuthGuide(){
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;";
+  ov.innerHTML=`
+    <div style="background:white;border-radius:20px;padding:28px 24px;max-width:360px;width:100%;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔐</div>
+      <div style="font-size:20px;font-weight:900;color:#1A2E1F;margin-bottom:10px">Connexion Google</div>
+      <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:20px">
+        Pour te connecter depuis l'app, suis ces étapes :
+      </div>
+      <div style="text-align:left;background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:20px">
+        <div style="font-size:13px;color:#333;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start">
+          <span style="background:#3DB86B;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0">1</span>
+          <span>Ouvre <b>minta-app.com</b> dans <b>Safari</b> (pas depuis cette app)</span>
+        </div>
+        <div style="font-size:13px;color:#333;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start">
+          <span style="background:#3DB86B;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0">2</span>
+          <span>Connecte-toi avec Google dans Safari</span>
+        </div>
+        <div style="font-size:13px;color:#333;display:flex;gap:10px;align-items:flex-start">
+          <span style="background:#3DB86B;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0">3</span>
+          <span>Reviens sur l'app — tu seras connecté automatiquement ✅</span>
+        </div>
+      </div>
+      <button onclick="window.open('https://minta-app.com','_blank')" style="width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,#3DB86B,#1E8A44);color:white;font-family:Nunito,sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">
+        🌐 Ouvrir dans Safari
+      </button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:14px;border:1.5px solid #ddd;border-radius:12px;background:none;font-family:Nunito,sans-serif;font-size:14px;font-weight:700;color:#666;cursor:pointer">
+        Annuler
+      </button>
+    </div>`;
+  document.body.appendChild(ov);
 }
 function doGoogleSignOut(){
   if(!window._auth)return;
@@ -1703,8 +1753,18 @@ function setupAuthListener(){
   window._auth.getRedirectResult().then(result=>{
     if(result&&result.user){
       window._fbUser=result.user;
+      localStorage.removeItem("minta-auth-pending");
       updateAuthUI(result.user);
       syncUserData(result.user);
+    } else if(localStorage.getItem("minta-auth-pending")){
+      // Still pending - check current user
+      const cu=window._auth.currentUser;
+      if(cu){
+        window._fbUser=cu;
+        localStorage.removeItem("minta-auth-pending");
+        updateAuthUI(cu);
+        syncUserData(cu);
+      }
     }
   }).catch(e=>console.log("redirect result:",e.code));
 
@@ -1712,7 +1772,10 @@ function setupAuthListener(){
   window._auth.onAuthStateChanged(user=>{
     window._fbUser=user||null;
     updateAuthUI(user);
-    if(user) syncUserData(user);
+    if(user){
+      localStorage.removeItem("minta-auth-pending");
+      syncUserData(user);
+    }
   });
 }
 
