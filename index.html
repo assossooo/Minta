@@ -1662,8 +1662,23 @@ function doGoogleSignIn(){
   if(!window._fbReady||!window._auth){alert("Firebase non disponible");return;}
   try{
     const provider=new firebase.auth.GoogleAuthProvider();
-    window._auth.signInWithRedirect(provider);
-  }catch(e){console.error(e);alert("Erreur connexion");}
+    provider.addScope("email");
+    provider.addScope("profile");
+    window._auth.signInWithPopup(provider)
+    .then(result=>{
+      window._fbUser=result.user;
+      updateAuthUI(result.user);
+    })
+    .catch(e=>{
+      console.error(e);
+      // Fallback redirect si popup bloqué
+      if(e.code==="auth/popup-blocked"||e.code==="auth/popup-closed-by-user"){
+        window._auth.signInWithRedirect(provider);
+      } else {
+        alert("Erreur connexion: "+e.message);
+      }
+    });
+  }catch(e){console.error(e);alert("Erreur: "+e.message);}
 }
 function doGoogleSignOut(){
   if(!window._auth)return;
