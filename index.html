@@ -13,16 +13,9 @@
 
 <style>
 :root{
-  --nuit:#0B1E2D;
-  --nuit-2:#122C40;
-  --carte:#16344A;
-  --calanque:#12808C;
-  --azur:#3FC6D4;
-  --ocre:#E9A03B;
-  --corail:#E4572E;
-  --calcaire:#EFE9DC;
-  --calcaire-2:#A9BDC9;
-  --frame-radius:18px;
+  --nuit:#0B1E2D; --nuit-2:#122C40; --carte:#16344A;
+  --calanque:#12808C; --azur:#3FC6D4; --ocre:#E9A03B; --corail:#E4572E;
+  --calcaire:#EFE9DC; --calcaire-2:#A9BDC9; --frame-radius:18px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -31,46 +24,55 @@ body{
     radial-gradient(1200px 600px at 80% -10%, rgba(18,128,140,.35), transparent 60%),
     radial-gradient(900px 500px at -10% 10%, rgba(233,160,59,.14), transparent 55%),
     var(--nuit);
-  color:var(--calcaire);
-  font-family:'Outfit',system-ui,-apple-system,sans-serif;
-  font-weight:300;
-  min-height:100vh;
-  padding-bottom:110px;
+  color:var(--calcaire); font-family:'Outfit',system-ui,-apple-system,sans-serif;
+  font-weight:300; min-height:100vh; padding-bottom:110px;
 }
-h1,h2,h3,.display{font-family:'Bricolage Grotesque','Outfit',sans-serif;font-weight:800;letter-spacing:-.02em;margin:0}
+h1,h2,h3{font-family:'Bricolage Grotesque','Outfit',sans-serif;font-weight:800;letter-spacing:-.02em;margin:0}
 button,input,select,textarea{font-family:inherit;font-size:16px}
 .wrap{max-width:760px;margin:0 auto;padding:0 16px}
 
-/* ---------- Écran nom ---------- */
-#gate{position:fixed;inset:0;z-index:60;background:var(--nuit);display:flex;align-items:center;justify-content:center;padding:24px}
-#gate .box{width:100%;max-width:380px}
-#gate h1{font-size:clamp(34px,9vw,46px);line-height:.95}
-#gate p{color:var(--calcaire-2);font-size:15px;margin:14px 0 22px}
+/* ---------- Écran d'entrée ---------- */
+#gate{position:fixed;inset:0;z-index:60;background:var(--nuit);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+#gate .box{width:100%;max-width:400px}
+#gate h1{font-size:clamp(32px,8.5vw,44px);line-height:.95}
+#gate h1 em{font-style:normal;color:var(--ocre)}
+#gate p{color:var(--calcaire-2);font-size:14.5px;margin:14px 0 20px;line-height:1.5}
+.lab{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--calcaire-2);margin:14px 0 6px}
 .field{width:100%;background:var(--carte);border:1px solid rgba(63,198,212,.25);color:var(--calcaire);
   border-radius:14px;padding:14px 16px;outline:none}
 .field:focus{border-color:var(--azur)}
 .btn{border:0;border-radius:14px;padding:14px 18px;font-weight:600;cursor:pointer}
-.btn-main{background:var(--ocre);color:#2A1804;width:100%;margin-top:12px}
+.btn-main{background:var(--ocre);color:#2A1804;width:100%;margin-top:16px}
 .btn-ghost{background:transparent;border:1px solid rgba(239,233,220,.25);color:var(--calcaire)}
+.btn-sm{padding:9px 13px;font-size:13.5px;border-radius:11px}
+.hint{font-size:12px;color:var(--calcaire-2);margin-top:12px;line-height:1.5}
 
 /* ---------- Header ---------- */
 header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
-  background:linear-gradient(var(--nuit) 55%, rgba(11,30,45,.82));
+  background:linear-gradient(var(--nuit) 55%, rgba(11,30,45,.85));
   border-bottom:1px solid rgba(63,198,212,.15)}
-.brand{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 0 8px}
-.brand h1{font-size:clamp(21px,5.4vw,28px);line-height:1}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0 6px}
+.brand h1{font-size:clamp(19px,5vw,26px);line-height:1.05}
 .brand h1 em{font-style:normal;color:var(--ocre)}
-.who{font-size:12px;color:var(--calcaire-2);white-space:nowrap;background:none;border:0;padding:6px 0}
+.crew{display:flex;gap:-6px;align-items:center}
+.crew .av{margin-left:-7px;border:2px solid var(--nuit)}
+.crew button{background:none;border:0;padding:0;display:flex;align-items:center;cursor:pointer}
 
-/* ---------- Bande des jours (signature) ---------- */
+/* Avatars */
+.av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:#08131C;flex:0 0 auto;font-family:'Bricolage Grotesque'}
+.av.sm{width:20px;height:20px;font-size:9.5px}
+.av.lg{width:32px;height:32px;font-size:13px}
+
+/* ---------- Bande des jours ---------- */
 .strip{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
 .strip::-webkit-scrollbar{display:none}
 .day{flex:0 0 auto;width:54px;border-radius:12px;padding:8px 4px 7px;text-align:center;cursor:pointer;
   background:var(--nuit-2);border:1px solid rgba(239,233,220,.08);transition:.18s}
 .day .dow{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--calcaire-2)}
 .day .num{font-family:'Bricolage Grotesque';font-weight:800;font-size:19px;line-height:1.1}
-.day .dot{height:4px;border-radius:2px;margin:5px 6px 0;background:rgba(239,233,220,.12)}
-.day .dot i{display:block;height:100%;border-radius:2px;background:var(--azur)}
+.day .bar{display:flex;gap:2px;height:4px;margin:5px 5px 0;border-radius:2px;overflow:hidden;background:rgba(239,233,220,.12)}
+.day .bar i{flex:1}
 .day.on{background:var(--calanque);border-color:var(--azur)}
 .day.shabbat{background:linear-gradient(180deg,#3A2A16,#241a0f);border-color:rgba(233,160,59,.4)}
 .day.shabbat .num{color:var(--ocre)}
@@ -89,14 +91,17 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 /* ---------- Cartes ---------- */
 .list{display:flex;flex-direction:column;gap:12px;padding-top:6px}
 .card{background:var(--carte);border:1px solid rgba(239,233,220,.08);border-radius:var(--frame-radius);
-  padding:14px 14px 12px;animation:pop .25s ease both}
+  border-left:3px solid var(--u,var(--azur));padding:0 0 12px;overflow:hidden;animation:pop .25s ease both}
 @keyframes pop{from{opacity:0;transform:translateY(8px)}}
-.card .top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.card .pad{padding:0 14px}
+.photo{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--nuit-2)}
+.card .top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding-top:13px}
 .card h3{font-size:17px;line-height:1.2}
 .cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:600;
   padding:4px 9px;border-radius:999px;white-space:nowrap}
 .meta{font-size:13px;color:var(--calcaire-2);margin-top:6px;line-height:1.45}
 .meta b{font-weight:600;color:var(--calcaire)}
+.by{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--calcaire-2)}
 .votes{display:flex;gap:7px;margin-top:12px}
 .vote{flex:1;border-radius:12px;padding:9px 4px;border:1px solid rgba(239,233,220,.14);
   background:var(--nuit-2);color:var(--calcaire-2);font-size:14px;cursor:pointer;transition:.15s}
@@ -104,60 +109,94 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 .vote.on-oui{background:var(--calanque);border-color:var(--azur);color:#EAFDFF}
 .vote.on-bof{background:#4A3A18;border-color:var(--ocre);color:#FFF0D6}
 .vote.on-non{background:#4A2118;border-color:var(--corail);color:#FFE3DA}
-.who-voted{font-size:12px;color:var(--calcaire-2);margin-top:9px;line-height:1.5}
-.who-voted span{color:var(--calcaire)}
+.who-voted{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;align-items:center}
+.who-voted .tagv{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--calcaire-2);
+  background:var(--nuit-2);border-radius:999px;padding:3px 8px 3px 3px}
 .row{display:flex;gap:8px;align-items:center;margin-top:10px}
 .sel{flex:1;background:var(--nuit-2);border:1px solid rgba(239,233,220,.14);color:var(--calcaire);
   border-radius:11px;padding:9px 10px;font-size:13.5px}
 .del{background:none;border:0;color:var(--calcaire-2);font-size:13px;cursor:pointer;padding:6px}
 
+/* ---------- Fil de discussion ---------- */
+.thread{margin-top:12px;border-top:1px solid rgba(239,233,220,.1);padding-top:10px}
+.thbar{display:flex;align-items:center;justify-content:space-between;background:none;border:0;width:100%;
+  color:var(--calcaire-2);font-size:13px;cursor:pointer;padding:2px 0}
+.thbar b{color:var(--calcaire);font-weight:600}
+.cmts{display:flex;flex-direction:column;gap:9px;margin-top:11px;max-height:290px;overflow-y:auto;padding-right:2px}
+.cmt{display:flex;gap:8px;align-items:flex-start}
+.cmt .bub{background:var(--nuit-2);border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.45;flex:1}
+.cmt .nm{font-size:11.5px;font-weight:600;margin-bottom:2px}
+.cmt .ts{font-size:10.5px;color:var(--calcaire-2);font-weight:400;margin-left:5px}
+.cmt.prop .bub{background:rgba(233,160,59,.11);border:1px solid rgba(233,160,59,.35)}
+.prop-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ocre);margin-bottom:4px}
+.prop-act{display:flex;gap:7px;margin-top:9px}
+.applied{font-size:12px;color:var(--azur);margin-top:8px}
+.composer{display:flex;gap:7px;margin-top:11px}
+.composer .field{padding:10px 13px;font-size:14px;border-radius:12px}
+.composer .send{background:var(--azur);color:#04222A;border:0;border-radius:12px;padding:0 15px;font-weight:600;cursor:pointer}
+.modes{display:flex;gap:6px;margin-top:8px}
+.mode{font-size:12px;border-radius:9px;padding:6px 10px;cursor:pointer;background:var(--nuit-2);
+  border:1px solid rgba(239,233,220,.12);color:var(--calcaire-2)}
+.mode.on{background:var(--ocre);color:#2A1804;border-color:var(--ocre);font-weight:600}
+
 /* ---------- Planning ---------- */
-.planday{border-left:2px solid rgba(63,198,212,.3);padding:0 0 18px 14px;margin-left:6px;position:relative}
+.planday{border-left:2px solid rgba(63,198,212,.3);padding:0 0 20px 14px;margin-left:6px;position:relative}
 .planday:before{content:'';position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--azur)}
 .planday.sh:before{background:var(--ocre)}
-.planday h3{font-size:16px}
 .planday .date{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--calcaire-2)}
-.planitem{background:var(--carte);border-radius:12px;padding:10px 12px;margin-top:8px;font-size:14.5px}
+.planday h3{font-size:15px;margin-top:1px}
+.planitem{background:var(--carte);border-radius:12px;border-left:3px solid var(--u,var(--azur));
+  padding:10px 12px;margin-top:8px;font-size:14.5px;display:flex;gap:9px;align-items:flex-start}
+.planitem .txt{flex:1}
 .planitem small{display:block;color:var(--calcaire-2);font-size:12.5px;margin-top:2px}
+.planitem img{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:0 0 auto}
 .empty{color:var(--calcaire-2);font-size:13.5px;padding:6px 0 0;font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:8px;background:var(--nuit-2);border-radius:14px;padding:11px 13px;margin-bottom:16px}
+.legend .who{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--calcaire-2)}
 
-/* ---------- Ajout ---------- */
+/* ---------- Barre bas / formulaire ---------- */
 .fab{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
   background:linear-gradient(transparent, var(--nuit) 45%)}
 .fab .inner{max-width:760px;margin:0 auto;display:flex;gap:8px}
-.fab .btn{flex:1}
+.fab .btn{flex:1;margin:0}
 #sheet{position:fixed;inset:0;z-index:50;background:rgba(4,12,20,.7);display:none;align-items:flex-end}
 #sheet.open{display:flex}
 #sheet .panel{width:100%;max-width:760px;margin:0 auto;background:var(--nuit-2);border-radius:22px 22px 0 0;
-  padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;animation:up .25s ease}
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .25s ease}
 @keyframes up{from{transform:translateY(24px)}}
 #sheet h2{font-size:22px;margin-bottom:14px}
 #sheet .field,#sheet .sel{margin-bottom:9px;width:100%}
+.drop{border:1px dashed rgba(63,198,212,.4);border-radius:14px;padding:16px;text-align:center;
+  color:var(--calcaire-2);font-size:13.5px;cursor:pointer;margin-bottom:9px}
+.drop img{max-width:100%;border-radius:10px;margin-top:9px;display:block}
 .banner{background:rgba(233,160,59,.12);border:1px solid rgba(233,160,59,.3);color:#F5D9A8;
   border-radius:12px;padding:11px 13px;font-size:12.5px;margin:8px 0 2px;line-height:1.5}
 .banner.err{background:rgba(228,87,46,.14);border-color:rgba(228,87,46,.45);color:#FFCBBB}
 .banner.ok{background:rgba(63,198,212,.1);border-color:rgba(63,198,212,.3);color:#B9EEF4}
 .banner code{font-family:ui-monospace,monospace;font-size:11.5px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:5px}
-.banner .btn{margin-top:9px;padding:11px 14px;font-size:14px}
-.foot{text-align:center;color:var(--calcaire-2);font-size:12px;padding:26px 0 6px}
+.foot{text-align:center;color:var(--calcaire-2);font-size:12px;padding:26px 0 6px;line-height:1.6}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- ============ ÉCRAN NOM ============ -->
+<!-- ============ ENTRÉE ============ -->
 <div id="gate"><div class="box">
   <h1>On fait quoi<br>cette <em>semaine</em> ?</h1>
-  <p>Marseille &amp; la côte — du 17 au 27 août. Propose, vote, et le planning se remplit tout seul.</p>
-  <input class="field" id="gname" placeholder="Ton prénom" autocomplete="given-name">
-  <button class="btn btn-main" id="gbtn">C'est parti</button>
+  <p>Marseille &amp; la côte, du 17 au 27 août. Chacun propose, commente et vote — le planning se remplit tout seul.</p>
+  <label class="lab" for="gname">Ton prénom</label>
+  <input class="field" id="gname" placeholder="Jeremy" autocomplete="given-name">
+  <label class="lab" for="gcode">Code du voyage</label>
+  <input class="field" id="gcode" placeholder="marseille2026" autocapitalize="none" autocorrect="off">
+  <button class="btn btn-main" id="gbtn">Rejoindre le voyage</button>
+  <div class="hint" id="ghint">Le code sépare les voyages : sans lui, impossible de tomber sur votre planning. Donne-le uniquement aux gens du voyage.</div>
 </div></div>
 
 <!-- ============ HEADER ============ -->
 <header><div class="wrap">
   <div class="brand">
     <h1>On fait quoi <em>cette semaine</em> ?</h1>
-    <button class="who" id="who"></button>
+    <div class="crew"><button id="crew"></button></div>
   </div>
   <div class="strip" id="strip"></div>
   <div class="tabs">
@@ -173,10 +212,9 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
   <div class="foot" id="foot"></div>
 </main>
 
-<!-- ============ BARRE BAS ============ -->
 <div class="fab"><div class="inner">
   <button class="btn btn-main" id="add">+ Ajouter une idée</button>
-  <button class="btn btn-ghost" id="copy">Copier</button>
+  <button class="btn btn-ghost" id="share">Inviter</button>
 </div></div>
 
 <!-- ============ FORMULAIRE ============ -->
@@ -187,6 +225,8 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
   <input class="field" id="f-place" placeholder="Où ? ex : Cassis (45 min de Marseille)">
   <input class="field" id="f-note" placeholder="Détail utile : horaires, prix, poussette…">
   <select class="sel" id="f-day"></select>
+  <div class="drop" id="f-drop">📷 Ajouter une photo<div id="f-prev"></div></div>
+  <input type="file" id="f-file" accept="image/*" hidden>
   <button class="btn btn-main" id="f-save">Ajouter l'idée</button>
   <button class="btn btn-ghost" id="f-cancel" style="width:100%;margin-top:8px">Annuler</button>
 </div></div>
@@ -194,10 +234,7 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* =========================================================================
-   Projet Firebase : minta-126b4 — config déjà en place.
-   Il reste à publier les règles Firestore sur le chemin ofq_trips (voir chat).
-   ========================================================================= */
+/* ======================= Projet Firebase : minta-126b4 ======================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBQFA9hpbUiW-ypGoK309svuXd1LMRsRWI",
   authDomain: "minta-126b4.firebaseapp.com",
@@ -206,8 +243,7 @@ const firebaseConfig = {
   messagingSenderId: "116228959256",
   appId: "1:116228959256:web:c8280ed36eb8f918bea76d"
 };
-const TRIP_ID = "marseille-2026";
-/* ========================================================================= */
+/* ============================================================================ */
 
 const CATS = {
   plage:     {label:"Plage",       bg:"#E9A03B", fg:"#2A1804"},
@@ -219,111 +255,121 @@ const CATS = {
   resto:     {label:"Resto",       bg:"#EFE9DC", fg:"#16344A"},
   logistique:{label:"Logistique",  bg:"#94A7B3", fg:"#0B1E2D"}
 };
+const PALETTE = ["#3FC6D4","#E9A03B","#E8776A","#7FB069","#C58BD6","#5AA9E6","#F2C14E","#E06C9F","#57C99A","#B0A6F0"];
+
 const DAYS = [];
 for(let d=17; d<=27; d++){
-  const date = new Date(2026,7,d);
-  const dow = ["dim","lun","mar","mer","jeu","ven","sam"][date.getDay()];
-  DAYS.push({key:String(d), num:d, dow, shabbat:(d===21||d===22)});
+  const dt = new Date(2026,7,d);
+  DAYS.push({key:String(d), num:d, dow:["dim","lun","mar","mer","jeu","ven","sam"][dt.getDay()], shabbat:(d===21||d===22)});
 }
-const DAY_LABEL = k => { const d=DAYS.find(x=>x.key===k); return d ? `${d.dow}. ${d.num} août` : ""; };
+const dayLabel = k => { const d=DAYS.find(x=>x.key===k); return d ? `${d.dow}. ${d.num} août` : "aucun jour"; };
 
-let me = localStorage.getItem('ofq_user') || "";
-let items = [];
-let view = "idees", filterCat = "all", filterDay = null;
-let db = null, LOCAL = !firebaseConfig.apiKey;
+let me   = localStorage.getItem('ofq_user') || "";
+let trip = localStorage.getItem('ofq_trip') || "";
+let items = [], members = {};
+let view = "idees", filterCat = "all", filterDay = null, openThreads = {}, draftPhoto = null, cmtMode = {};
+let db = null, LOCAL = false, unsubA = null, unsubT = null;
 
-/* ---------- Stockage ---------- */
-function localLoad(){ try{ return JSON.parse(localStorage.getItem('ofq_items')||"[]"); }catch(e){ return []; } }
-function localSave(){ localStorage.setItem('ofq_items', JSON.stringify(items)); }
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const slug = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const colOf = n => (members[n] && members[n].color) || PALETTE[Math.abs([...String(n)].reduce((a,c)=>a*31+c.charCodeAt(0),7)) % PALETTE.length];
+const initials = n => String(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const av = (n,cls='') => `<span class="av ${cls}" style="background:${colOf(n)}" title="${esc(n)}">${esc(initials(n))}</span>`;
+const when = t => { const d=new Date(t||Date.now()); return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); };
+const setBanner = h => $('#banner').innerHTML = h;
 
-function setBanner(html){ document.getElementById('banner').innerHTML = html; }
+/* ---------- Stockage local (secours) ---------- */
+const lkey = () => 'ofq_items_'+trip;
+const localLoad = () => { try{ return JSON.parse(localStorage.getItem(lkey())||"[]"); }catch(e){ return []; } };
+const localSave = () => localStorage.setItem(lkey(), JSON.stringify(items));
+
+/* ---------- Connexion ---------- */
+function tripRef(){ return db.collection('ofq_trips').doc(trip); }
+function actRef(){ return tripRef().collection('activities'); }
 
 function fallback(reason){
   LOCAL = true; items = localLoad(); render();
-  setBanner(`<div class="banner err"><b>Personne d'autre ne voit tes idées.</b><br>
-    ${reason}<br>En attendant, tes idées restent sur cet appareil.</div>`);
+  setBanner(`<div class="banner err"><b>Personne d'autre ne voit tes idées.</b><br>${reason}</div>`);
 }
 
-function start(){
-  if(!firebaseConfig.apiKey || !firebaseConfig.projectId){
-    return fallback(`Le bloc <code>firebaseConfig</code> en haut de <code>index.html</code> est encore vide. Colle celui de ta console Firebase, puis republie le fichier.`);
+function connect(){
+  if(unsubA) unsubA(); if(unsubT) unsubT();
+  if(!db){
+    try{ firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+    catch(e){ return fallback(`Firebase n'a pas démarré : <code>${esc(e.message)}</code>`); }
   }
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-  }catch(e){ return fallback(`Firebase n'a pas démarré : <code>${esc(e.message)}</code>`); }
-
-  db.collection('ofq_trips').doc(TRIP_ID).collection('activities')
-    .orderBy('createdAt','asc')
-    .onSnapshot(snap=>{
-      LOCAL = false;
-      items = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      render();
-      showShared();
-    }, err=>{
-      console.error(err);
-      fallback(`Firestore a refusé la lecture : <code>${esc(err.code||'')}</code>. Vérifie que la base Firestore est bien créée et que les règles autorisent <code>ofq_trips</code>.`);
-    });
+  tripRef().set({members:{[me]:{color:pickColor(), joined:Date.now()}}}, {merge:true}).catch(()=>{});
+  unsubT = tripRef().onSnapshot(d=>{ members = (d.data()||{}).members || {}; render(); }, ()=>{});
+  unsubA = actRef().orderBy('createdAt','asc').onSnapshot(snap=>{
+    LOCAL = false;
+    items = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    render();
+    setBanner(`<div class="banner ok">Voyage <b>${esc(trip)}</b> · ${Object.keys(members).length} participant(s) · tout est partagé en direct.</div>`);
+  }, err=>{
+    fallback(`Firestore a refusé la lecture : <code>${esc(err.code||'')}</code>. Vérifie les règles sur <code>ofq_trips</code>.`);
+  });
+}
+function pickColor(){
+  if(members[me] && members[me].color) return members[me].color;
+  const used = Object.values(members).map(m=>m.color);
+  return PALETTE.find(c=>!used.includes(c)) || colOf(me);
 }
 
-/* Idées saisies avant la connexion → on propose de les envoyer à tout le monde */
-function showShared(){
-  const local = localLoad();
-  const orphans = local.filter(l => !items.some(i => i.title === l.title));
-  if(!orphans.length){
-    setBanner(`<div class="banner ok">Partagé ✓ — tout le monde voit les mêmes idées, en direct.</div>`);
-    return;
-  }
-  setBanner(`<div class="banner">Partagé ✓ — mais <b>${orphans.length} idée(s)</b> saisies avant la connexion sont restées sur cet appareil.
-    <button class="btn btn-main" id="imp">Envoyer ces ${orphans.length} idées à tout le monde</button></div>`);
-  document.getElementById('imp').onclick = ()=>{
-    document.getElementById('imp').textContent = 'Envoi…';
-    const batch = db.batch();
-    const col = db.collection('ofq_trips').doc(TRIP_ID).collection('activities');
-    orphans.forEach(o=>{
-      batch.set(col.doc(), {
-        title:o.title, cat:o.cat, place:o.place||'', note:o.note||'',
-        day:o.day||'', votes:o.votes||{}, author:o.author||me, createdAt:o.createdAt||Date.now()
-      });
-    });
-    batch.commit().then(()=>{
-      localStorage.removeItem('ofq_items');
-      setBanner(`<div class="banner ok">Envoyé ✓ — les ${orphans.length} idées sont maintenant visibles par tout le monde.</div>`);
-    }).catch(e=>{
-      setBanner(`<div class="banner err">Envoi refusé : <code>${esc(e.code||e.message)}</code>. Les règles Firestore n'autorisent pas l'écriture.</div>`);
-    });
-  };
-}
+/* ---------- Écritures ---------- */
 function addItem(o){
-  const doc = {...o, votes:{}, author:me, createdAt: Date.now()};
-  if(LOCAL){ items.push({id:'l'+Date.now()+Math.random(), ...doc}); localSave(); render(); }
-  else db.collection('ofq_trips').doc(TRIP_ID).collection('activities').add(doc);
+  const doc = {...o, votes:{}, comments:[], author:me, placedBy:(o.day?me:''), createdAt:Date.now()};
+  if(LOCAL){ items.push({id:'l'+Date.now(), ...doc}); localSave(); render(); }
+  else actRef().add(doc);
 }
 function patchItem(id, data){
-  if(LOCAL){ const it = items.find(x=>x.id===id); Object.assign(it, data); localSave(); render(); }
-  else db.collection('ofq_trips').doc(TRIP_ID).collection('activities').doc(id).update(data);
+  if(LOCAL){ Object.assign(items.find(x=>x.id===id), data); localSave(); render(); }
+  else actRef().doc(id).update(data);
 }
 function removeItem(id){
   if(LOCAL){ items = items.filter(x=>x.id!==id); localSave(); render(); }
-  else db.collection('ofq_trips').doc(TRIP_ID).collection('activities').doc(id).delete();
+  else actRef().doc(id).delete();
+}
+function addComment(id, c){
+  const it = items.find(x=>x.id===id);
+  patchItem(id, {comments:[...(it.comments||[]), c]});
+}
+
+/* ---------- Photo : redimension + compression ---------- */
+function readPhoto(file, cb){
+  const r = new FileReader();
+  r.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1000, s = Math.min(1, max/Math.max(img.width,img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      let q = 0.62, out = c.toDataURL('image/jpeg', q);
+      while(out.length > 240000 && q > 0.28){ q -= 0.08; out = c.toDataURL('image/jpeg', q); }
+      cb(out);
+    };
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
 }
 
 /* ---------- Idées de départ ---------- */
 const SEED = [
- ["Calanques en bateau depuis Cassis","aquatique","Cassis — 45 min de route","3 calanques, ~1h de bateau. Réserver le matin, mer plus calme."],
+ ["Calanques en bateau depuis Cassis","aquatique","Cassis — 45 min de route","3 calanques, ~1h de bateau. Le matin, mer plus calme."],
  ["Kayak dans la calanque de Sormiou","aquatique","Marseille 9e","À voir avec l'âge des garçons — sinon baignade depuis la plage."],
  ["Île du Frioul en navette","aquatique","Départ Vieux-Port","20 min de bateau, criques et grands espaces pour courir."],
  ["Château d'If","aquatique","Départ Vieux-Port","Court, spectaculaire, bien avec des enfants qui aiment les histoires."],
- ["Aqualand Fréjus","aquatique","Fréjus — 1h30","Journée entière, prévoir tôt le matin pour la queue."],
+ ["Aqualand Fréjus","aquatique","Fréjus — 1h30","Journée entière, arriver tôt pour éviter la queue."],
  ["Plage des Catalans","plage","Marseille 7e","La plus proche du centre, sable, poussette OK."],
- ["Plages du Prado","plage","Marseille 8e","Grandes pelouses + aires de jeux juste derrière."],
+ ["Plages du Prado","plage","Marseille 8e","Grandes pelouses et aires de jeux juste derrière."],
  ["Plage de la Pointe Rouge","plage","Marseille 8e","Eau peu profonde, parfaite pour les petits."],
  ["Plage du Bestouan","plage","Cassis","Eau très claire, galets — prévoir des chaussons."],
  ["Notre-Dame de la Garde","exterieur","Marseille","Monter en petit train depuis le Vieux-Port, ça évite la côte."],
- ["Parc Borély","exterieur","Marseille 8e","Aires de jeux, poneys, grand lac. Valeur sûre fin de journée."],
+ ["Parc Borély","exterieur","Marseille 8e","Aires de jeux, poneys, grand lac. Valeur sûre en fin de journée."],
  ["Vallon des Auffes au coucher du soleil","exterieur","Marseille 7e","Mini port de carte postale, 20 min sur place suffisent."],
- ["Marché aux poissons du Vieux-Port","exterieur","Marseille 1er","Tous les matins vers 8h-13h. Les garçons vont adorer."],
- ["Parc du Mugel","exterieur","La Ciotat — 40 min","Jardin botanique en bord de mer, ombragé."],
+ ["Marché aux poissons du Vieux-Port","exterieur","Marseille 1er","Tous les matins 8h-13h. Les garçons vont adorer."],
+ ["Parc du Mugel","exterieur","La Ciotat — 40 min","Jardin botanique en bord de mer, bien ombragé."],
  ["MuCEM","interieur","Marseille 2e","La passerelle et le fort valent autant que les expos."],
  ["Musée Cosquer","interieur","Villa Méditerranée","Réplique de la grotte en petit véhicule — top les jours de mistral."],
  ["Parc de trampolines / jeux couverts","interieur","Marseille","Plan B jour de pluie ou grosse chaleur."],
@@ -337,74 +383,113 @@ const SEED = [
  ["Èze village","village","3h","Montée raide : porte-bébé obligatoire, pas de poussette."],
  ["Aix-en-Provence","village","40 min","Cours Mirabeau, fontaines, marché le matin."],
  ["Match de l'OM au Vélodrome","foot","Marseille 8e — dim. 23 août","Billets à prendre. Vérifier l'heure du coup d'envoi."],
- ["Visite du stade Vélodrome","foot","Marseille 8e","Vestiaires + pelouse, ~1h. Plan B si pas de billets pour le match."],
+ ["Visite du stade Vélodrome","foot","Marseille 8e","Vestiaires et pelouse, ~1h. Plan B s'il n'y a pas de billets."],
  ["Boutique officielle OM","foot","Vieux-Port ou Vélodrome","Maillots floqués pour les garçons."],
  ["Récupérer la voiture de location","logistique","Aéroport de Nice — lun. 17 août","Sièges auto à confirmer à la réservation."],
- ["Route Nice → Marseille avec arrêts","logistique","lun. 17 ou mar. 18 août","Compter 2h30 sans arrêt, le double avec les villages."],
+ ["Route Nice → Marseille avec arrêts","logistique","lun. 17 ou mar. 18 août","2h30 sans arrêt, le double avec les villages."],
  ["Bouillabaisse ou panisses en famille","resto","Marseille","Un vrai repas du sud, un soir où tout le monde a la forme."]
 ];
-function seed(){ SEED.forEach(([title,cat,place,note])=>addItem({title,cat,place,note,day:""})); }
+const seed = () => SEED.forEach(([title,cat,place,note])=>addItem({title,cat,place,note,day:""}));
 
-/* ---------- Rendu ---------- */
-const $ = s => document.querySelector(s);
-
+/* ---------- Calculs ---------- */
 function score(it){
   const v = Object.values(it.votes||{});
   return {oui:v.filter(x=>x==='oui').length, bof:v.filter(x=>x==='bof').length, non:v.filter(x=>x==='non').length};
 }
-function names(it, val){
-  return Object.entries(it.votes||{}).filter(([,v])=>v===val).map(([n])=>n);
-}
 
+/* ---------- Rendu : bande + filtres ---------- */
 function renderStrip(){
   $('#strip').innerHTML = DAYS.map(d=>{
-    const n = items.filter(i=>i.day===d.key).length;
-    const w = Math.min(100, n*25);
+    const day = items.filter(i=>i.day===d.key);
+    const bars = day.slice(0,5).map(i=>`<i style="background:${colOf(i.placedBy||i.author)}"></i>`).join('');
     return `<div class="day ${filterDay===d.key?'on':''} ${d.shabbat?'shabbat':''}" data-day="${d.key}">
       <div class="dow">${d.dow}</div><div class="num">${d.num}</div>
-      <div class="dot"><i style="width:${w}%"></i></div></div>`;
+      <div class="bar">${bars}</div></div>`;
   }).join('');
   $('#strip').querySelectorAll('.day').forEach(el=>el.onclick=()=>{
     filterDay = filterDay===el.dataset.day ? null : el.dataset.day;
-    if(filterDay) view='idees', document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view==='idees'));
     render();
   });
 }
 function renderChips(){
-  const all = `<div class="chip ${filterCat==='all'?'on':''}" data-cat="all">Tout (${items.length})</div>`;
-  $('#chips').innerHTML = all + Object.entries(CATS).map(([k,c])=>{
-    const n = items.filter(i=>i.cat===k).length;
-    return `<div class="chip ${filterCat===k?'on':''}" data-cat="${k}">${c.label} (${n})</div>`;
-  }).join('');
+  $('#chips').innerHTML = `<div class="chip ${filterCat==='all'?'on':''}" data-cat="all">Tout (${items.length})</div>` +
+    Object.entries(CATS).map(([k,c])=>`<div class="chip ${filterCat===k?'on':''}" data-cat="${k}">${c.label} (${items.filter(i=>i.cat===k).length})</div>`).join('');
   $('#chips').querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ filterCat=el.dataset.cat; render(); });
 }
+function renderCrew(){
+  const list = Object.keys(members).length ? Object.keys(members) : [me];
+  $('#crew').innerHTML = list.slice(0,5).map(n=>av(n)).join('') +
+    (list.length>5?`<span class="av" style="background:var(--nuit-2);color:var(--calcaire)">+${list.length-5}</span>`:'');
+}
 
+/* ---------- Rendu : fil de discussion ---------- */
+function thread(it){
+  const cs = it.comments||[], open = openThreads[it.id];
+  if(!open) return `<div class="thread"><button class="thbar" data-th="${it.id}">
+    <span>💬 ${cs.length ? `<b>${cs.length}</b> message${cs.length>1?'s':''}` : 'Commenter ou proposer un autre jour'}</span><span>›</span></button></div>`;
+  const mode = cmtMode[it.id] || 'msg';
+  const body = cs.map((c,idx)=>{
+    if(c.type==='change'){
+      const done = c.applied;
+      return `<div class="cmt prop">${av(c.author,'sm')}<div class="bub">
+        <div class="prop-head">Proposition de ${esc(c.author)}</div>
+        <div class="nm">${esc(dayLabel(c.day))}<span class="ts">${when(c.ts)}</span></div>
+        ${c.text?`<div>${esc(c.text)}</div>`:''}
+        ${done ? `<div class="applied">✓ Appliqué — l'idée est calée ce jour-là</div>`
+               : `<div class="prop-act"><button class="btn btn-sm btn-main" style="margin:0;width:auto" data-apply="${it.id}|${idx}">Appliquer</button></div>`}
+      </div></div>`;
+    }
+    return `<div class="cmt">${av(c.author,'sm')}<div class="bub">
+      <div class="nm" style="color:${colOf(c.author)}">${esc(c.author)}<span class="ts">${when(c.ts)}</span></div>
+      <div>${esc(c.text)}</div></div></div>`;
+  }).join('') || `<div class="empty">Rien pour l'instant. Lance la discussion.</div>`;
+
+  const dayPick = mode==='change'
+    ? `<select class="sel" data-pday="${it.id}" style="margin-top:8px">` +
+      DAYS.map(d=>`<option value="${d.key}" ${it.day===d.key?'selected':''}>${d.dow}. ${d.num} août${d.shabbat?' · Chabbat':''}</option>`).join('') + `</select>`
+    : '';
+
+  return `<div class="thread">
+    <button class="thbar" data-th="${it.id}"><span>💬 <b>${cs.length}</b> message${cs.length>1?'s':''}</span><span>⌄</span></button>
+    <div class="cmts">${body}</div>
+    <div class="modes">
+      <div class="mode ${mode==='msg'?'on':''}" data-mode="${it.id}|msg">Message</div>
+      <div class="mode ${mode==='change'?'on':''}" data-mode="${it.id}|change">Proposer un autre jour</div>
+    </div>
+    ${dayPick}
+    <div class="composer">
+      <input class="field" data-cin="${it.id}" placeholder="${mode==='change'?'Pourquoi ce changement ?':'Écris ton message…'}">
+      <button class="send" data-csend="${it.id}">↑</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Rendu : carte ---------- */
 function card(it){
   const s = score(it), c = CATS[it.cat]||CATS.exterieur, mv = (it.votes||{})[me];
   const dayOpts = ['<option value="">Pas encore casé</option>']
     .concat(DAYS.map(d=>`<option value="${d.key}" ${it.day===d.key?'selected':''}>${d.dow}. ${d.num} août${d.shabbat?' · Chabbat':''}</option>`)).join('');
-  const line = ['oui','bof','non'].map(v=>{
-    const ns = names(it,v); if(!ns.length) return '';
-    const icon = v==='oui'?'👍':v==='bof'?'🤷':'👎';
-    return `${icon} <span>${ns.join(', ')}</span>`;
-  }).filter(Boolean).join(' &nbsp;·&nbsp; ');
-  return `<div class="card">
-    <div class="top">
-      <h3>${esc(it.title)}</h3>
-      <span class="cat" style="background:${c.bg};color:${c.fg}">${c.label}</span>
-    </div>
-    <div class="meta">${it.place?`<b>${esc(it.place)}</b><br>`:''}${esc(it.note||'')}</div>
-    <div class="votes">
-      <button class="vote ${mv==='oui'?'on-oui':''}" data-v="oui" data-id="${it.id}">👍 <b>${s.oui}</b></button>
-      <button class="vote ${mv==='bof'?'on-bof':''}" data-v="bof" data-id="${it.id}">🤷 <b>${s.bof}</b></button>
-      <button class="vote ${mv==='non'?'on-non':''}" data-v="non" data-id="${it.id}">👎 <b>${s.non}</b></button>
-    </div>
-    ${line?`<div class="who-voted">${line}</div>`:'<div class="who-voted">Personne n\'a encore voté.</div>'}
-    <div class="row">
-      <select class="sel" data-day-for="${it.id}">${dayOpts}</select>
-      ${it.author===me?`<button class="del" data-del="${it.id}">Supprimer</button>`:`<span class="del">par ${esc(it.author||'?')}</span>`}
-    </div>
-  </div>`;
+  const tags = ['oui','bof','non'].flatMap(v=>
+    Object.entries(it.votes||{}).filter(([,val])=>val===v)
+      .map(([n])=>`<span class="tagv">${av(n,'sm')}${v==='oui'?'👍':v==='bof'?'🤷':'👎'}</span>`)).join('');
+  return `<div class="card" style="--u:${colOf(it.author)}">
+    ${it.photo?`<img class="photo" src="${it.photo}" alt="">`:''}
+    <div class="pad">
+      <div class="top"><h3>${esc(it.title)}</h3><span class="cat" style="background:${c.bg};color:${c.fg}">${c.label}</span></div>
+      <div class="meta">${it.place?`<b>${esc(it.place)}</b><br>`:''}${esc(it.note||'')}</div>
+      <div class="by">${av(it.author,'sm')} proposé par ${esc(it.author||'?')}</div>
+      <div class="votes">
+        <button class="vote ${mv==='oui'?'on-oui':''}" data-v="oui" data-id="${it.id}">👍 <b>${s.oui}</b></button>
+        <button class="vote ${mv==='bof'?'on-bof':''}" data-v="bof" data-id="${it.id}">🤷 <b>${s.bof}</b></button>
+        <button class="vote ${mv==='non'?'on-non':''}" data-v="non" data-id="${it.id}">👎 <b>${s.non}</b></button>
+      </div>
+      ${tags?`<div class="who-voted">${tags}</div>`:''}
+      <div class="row">
+        <select class="sel" data-day-for="${it.id}">${dayOpts}</select>
+        ${it.author===me?`<button class="del" data-del="${it.id}">Supprimer</button>`:''}
+      </div>
+      ${thread(it)}
+    </div></div>`;
 }
 
 function renderIdees(){
@@ -413,48 +498,74 @@ function renderIdees(){
   if(filterDay) list = list.filter(i=>i.day===filterDay);
   list.sort((a,b)=>{const A=score(a),B=score(b);return (B.oui-B.non)-(A.oui-A.non)});
   if(!items.length){
-    $('#list').innerHTML = `<div class="card"><h3>Rien pour l'instant</h3>
-      <div class="meta">Charge les 32 idées de départ (Marseille, les calanques, les villages de la côte, l'OM), puis chacun vote.</div>
-      <button class="btn btn-main" id="seed">Charger les idées de départ</button></div>`;
+    $('#list').innerHTML = `<div class="card" style="--u:var(--ocre)"><div class="pad"><div class="top"><h3>Rien pour l'instant</h3></div>
+      <div class="meta">Charge les 32 idées de départ — Marseille, les calanques, les villages de la côte, l'OM — puis chacun vote.</div>
+      <button class="btn btn-main" id="seed">Charger les idées de départ</button></div></div>`;
     $('#seed').onclick = seed; return;
   }
-  if(!list.length){ $('#list').innerHTML = `<div class="empty">Aucune idée dans ce filtre. Ajoute la première.</div>`; return; }
-  $('#list').innerHTML = list.map(card).join('');
-  $('#list').querySelectorAll('.vote').forEach(b=>b.onclick=()=>{
-    const it = items.find(x=>x.id===b.dataset.id);
-    const votes = {...(it.votes||{})};
+  $('#list').innerHTML = list.length ? list.map(card).join('')
+    : `<div class="empty">Aucune idée dans ce filtre. Ajoute la première.</div>`;
+  bindCards();
+}
+
+function bindCards(){
+  const L = $('#list');
+  L.querySelectorAll('.vote').forEach(b=>b.onclick=()=>{
+    const it = items.find(x=>x.id===b.dataset.id), votes = {...(it.votes||{})};
     if(votes[me]===b.dataset.v) delete votes[me]; else votes[me]=b.dataset.v;
     patchItem(it.id,{votes});
   });
-  $('#list').querySelectorAll('[data-day-for]').forEach(s=>s.onchange=()=>patchItem(s.dataset.dayFor,{day:s.value}));
-  $('#list').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(confirm('Supprimer cette idée ?')) removeItem(b.dataset.del); });
+  L.querySelectorAll('[data-day-for]').forEach(s=>s.onchange=()=>patchItem(s.dataset.dayFor,{day:s.value, placedBy:s.value?me:''}));
+  L.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(confirm('Supprimer cette idée ?')) removeItem(b.dataset.del); });
+  L.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{ const id=b.dataset.th; openThreads[id]=!openThreads[id]; render(); });
+  L.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ const [id,m]=b.dataset.mode.split('|'); cmtMode[id]=m; render(); });
+  L.querySelectorAll('[data-csend]').forEach(b=>b.onclick=()=>sendCmt(b.dataset.csend));
+  L.querySelectorAll('[data-cin]').forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter') sendCmt(i.dataset.cin); }));
+  L.querySelectorAll('[data-apply]').forEach(b=>b.onclick=()=>{
+    const [id,idx] = b.dataset.apply.split('|');
+    const it = items.find(x=>x.id===id);
+    const cs = (it.comments||[]).map((c,i)=> i==+idx ? {...c, applied:true} : c);
+    patchItem(id, {comments:cs, day:cs[+idx].day, placedBy:cs[+idx].author});
+  });
+}
+function sendCmt(id){
+  const input = document.querySelector(`[data-cin="${id}"]`);
+  const text = input.value.trim(), mode = cmtMode[id]||'msg';
+  if(mode==='msg' && !text) return;
+  const c = {author:me, text, ts:Date.now(), type:mode};
+  if(mode==='change'){ c.day = document.querySelector(`[data-pday="${id}"]`).value; c.applied=false; }
+  input.value=''; addComment(id, c);
 }
 
+/* ---------- Rendu : planning ---------- */
 function renderPlanning(){
+  const legend = `<div class="legend">${Object.keys(members).length?Object.keys(members).map(n=>
+    `<span class="who">${av(n,'sm')} ${esc(n)}</span>`).join(''):`<span class="who">${av(me,'sm')} ${esc(me)}</span>`}</div>`;
   const html = DAYS.map(d=>{
-    const day = items.filter(i=>i.day===d.key)
-      .sort((a,b)=>(score(b).oui)-(score(a).oui));
-    const inner = day.length
-      ? day.map(i=>{const s=score(i);return `<div class="planitem">${esc(i.title)}
-          <small>${CATS[i.cat].label}${i.place?' · '+esc(i.place):''} — 👍 ${s.oui} 🤷 ${s.bof} 👎 ${s.non}</small></div>`}).join('')
-      : `<div class="empty">${d.shabbat?'Chabbat — on ne planifie rien.':'Rien de calé. Choisis une idée et donne-lui ce jour.'}</div>`;
+    const day = items.filter(i=>i.day===d.key).sort((a,b)=>score(b).oui-score(a).oui);
+    const inner = day.length ? day.map(i=>{
+      const s = score(i), by = i.placedBy||i.author;
+      return `<div class="planitem" style="--u:${colOf(by)}">
+        ${i.photo?`<img src="${i.photo}" alt="">`:''}
+        <div class="txt">${esc(i.title)}
+          <small>${CATS[i.cat].label}${i.place?' · '+esc(i.place):''} — 👍 ${s.oui} 🤷 ${s.bof} 👎 ${s.non}</small></div>
+        ${av(by)}</div>`;
+    }).join('') : `<div class="empty">${d.shabbat?'Chabbat — on ne planifie rien.':'Rien de calé.'}</div>`;
     return `<div class="planday ${d.shabbat?'sh':''}">
       <div class="date">${d.dow}. ${d.num} août${d.shabbat?' · Chabbat':''}</div>
       <h3>${d.num===17?'Arrivée à Nice':d.num===27?'Retour':''}</h3>${inner}</div>`;
   }).join('');
   const off = items.filter(i=>!i.day).length;
-  $('#list').innerHTML = html + (off?`<div class="empty">${off} idée(s) pas encore casée(s) dans un jour.</div>`:'');
+  $('#list').innerHTML = legend + html + (off?`<div class="empty">${off} idée(s) pas encore casée(s).</div>`:'');
 }
 
 function render(){
-  renderStrip(); renderChips();
+  renderStrip(); renderChips(); renderCrew();
   view==='idees' ? renderIdees() : renderPlanning();
-  $('#who').textContent = me + ' · changer';
-  $('#foot').textContent = LOCAL
-    ? "Mode local — les idées restent sur cet appareil."
-    : "Base partagée : " + firebaseConfig.projectId;
+  $('#foot').innerHTML = LOCAL ? "Mode local — les idées restent sur cet appareil."
+    : `Voyage <b>${esc(trip)}</b> · connecté en tant que ${esc(me)} — <span style="text-decoration:underline;cursor:pointer" id="chg">changer</span>`;
+  const chg = $('#chg'); if(chg) chg.onclick = openGate;
 }
-function esc(s){ return String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
 
 /* ---------- Interactions ---------- */
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
@@ -466,36 +577,53 @@ $('#add').onclick = ()=>{
   $('#f-cat').innerHTML = Object.entries(CATS).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join('');
   $('#f-day').innerHTML = ['<option value="">Pas encore casé</option>']
     .concat(DAYS.map(d=>`<option value="${d.key}">${d.dow}. ${d.num} août</option>`)).join('');
+  draftPhoto = null; $('#f-prev').innerHTML='';
   $('#sheet').classList.add('open'); $('#f-title').focus();
+};
+$('#f-drop').onclick = ()=>$('#f-file').click();
+$('#f-file').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  $('#f-prev').innerHTML = '<div style="margin-top:8px">Compression…</div>';
+  readPhoto(f, url=>{ draftPhoto = url; $('#f-prev').innerHTML = `<img src="${url}" alt="">`; });
 };
 $('#f-cancel').onclick = ()=>$('#sheet').classList.remove('open');
 $('#f-save').onclick = ()=>{
   const title = $('#f-title').value.trim();
   if(!title){ $('#f-title').focus(); return; }
-  addItem({title, cat:$('#f-cat').value, place:$('#f-place').value.trim(), note:$('#f-note').value.trim(), day:$('#f-day').value});
+  const o = {title, cat:$('#f-cat').value, place:$('#f-place').value.trim(), note:$('#f-note').value.trim(), day:$('#f-day').value};
+  if(draftPhoto) o.photo = draftPhoto;
+  addItem(o);
   ['#f-title','#f-place','#f-note'].forEach(s=>$(s).value='');
-  $('#sheet').classList.remove('open');
+  draftPhoto=null; $('#f-prev').innerHTML=''; $('#sheet').classList.remove('open');
 };
-$('#copy').onclick = ()=>{
-  let t = "On fait quoi cette semaine ? — Marseille 17→27 août\n\n";
-  DAYS.forEach(d=>{
-    const day = items.filter(i=>i.day===d.key);
-    t += `${d.dow}. ${d.num} août${d.shabbat?' (Chabbat)':''}\n`;
-    t += day.length ? day.map(i=>`  · ${i.title}${i.place?' — '+i.place:''}`).join('\n')+'\n' : "  —\n";
-  });
-  navigator.clipboard.writeText(t).then(()=>{ $('#copy').textContent='Copié'; setTimeout(()=>$('#copy').textContent='Copier',1500); });
+$('#share').onclick = ()=>{
+  const url = location.origin + location.pathname + '#' + trip;
+  const txt = `Rejoins notre planning de vacances 🏖️\n${url}\nCode du voyage : ${trip}`;
+  if(navigator.share) navigator.share({title:"On fait quoi cette semaine ?", text:txt}).catch(()=>{});
+  else navigator.clipboard.writeText(txt).then(()=>{ $('#share').textContent='Lien copié'; setTimeout(()=>$('#share').textContent='Inviter',1600); });
 };
-$('#who').onclick = ()=>{ $('#gname').value = me; $('#gate').style.display='flex'; };
-$('#gbtn').onclick = ()=>{
-  const n = $('#gname').value.trim();
-  if(!n){ $('#gname').focus(); return; }
-  me = n; localStorage.setItem('ofq_user', me);
-  $('#gate').style.display='none'; render();
-};
-$('#gname').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#gbtn').click(); });
 
-if(me){ $('#gate').style.display='none'; }
-start();
+/* ---------- Entrée ---------- */
+function openGate(){
+  $('#gname').value = me; $('#gcode').value = trip;
+  $('#gate').style.display='flex';
+}
+$('#gbtn').onclick = ()=>{
+  const n = $('#gname').value.trim(), c = slug($('#gcode').value) || 'marseille2026';
+  if(!n){ $('#gname').focus(); return; }
+  me = n; trip = c;
+  localStorage.setItem('ofq_user', me); localStorage.setItem('ofq_trip', trip);
+  location.hash = trip;
+  $('#gate').style.display='none';
+  connect();
+};
+$('#gname').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#gcode').focus(); });
+$('#gcode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#gbtn').click(); });
+
+const hash = slug(location.hash.replace('#',''));
+if(hash) trip = hash;
+if(me && trip){ $('#gate').style.display='none'; connect(); }
+else { if(trip) $('#gcode').value = trip; }
 </script>
 </body>
 </html>
