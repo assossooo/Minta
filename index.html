@@ -490,7 +490,7 @@ function card(it){
     <div class="pad">
       <div class="top"><h3>${esc(it.title)}</h3><span class="cat" style="background:${c.bg};color:${c.fg}">${c.label}</span></div>
       <div class="meta">${it.place?`<b>${esc(it.place)}</b><br>`:''}${esc(it.note||'')}</div>
-      <div class="by">${av(it.author,'sm')} proposé par ${esc(it.author||'?')}${it.editedBy?` · modifié par ${esc(it.editedBy)}`:''}</div>
+      <div class="by">${av(it.author,'sm')} proposé par ${esc(it.author||'?')}</div>
       <div class="votes">
         <button class="vote ${mv==='oui'?'on-oui':''}" data-v="oui" data-id="${it.id}">👍 <b>${s.oui}</b></button>
         <button class="vote ${mv==='bof'?'on-bof':''}" data-v="bof" data-id="${it.id}">🤷 <b>${s.bof}</b></button>
@@ -499,10 +499,10 @@ function card(it){
       ${tags?`<div class="who-voted">${tags}</div>`:''}
       <div class="row">
         ${it.author===me
-          ? `<select class="sel" data-day-for="${it.id}">${dayOpts}</select>`
+          ? `<select class="sel" data-day-for="${it.id}">${dayOpts}</select>
+             <button class="del edit" data-edit="${it.id}">✎ Modifier</button>
+             <button class="del" data-del="${it.id}">Supprimer</button>`
           : `<div class="sel locked">📌 ${it.day?dayLabel(it.day):'Pas encore calé'} <span>— ${esc(it.author||'?')} décide</span></div>`}
-        <button class="del edit" data-edit="${it.id}">✎ Modifier</button>
-        ${it.author===me?`<button class="del" data-del="${it.id}">Supprimer</button>`:''}
       </div>
       ${thread(it)}
     </div></div>`;
@@ -606,6 +606,10 @@ function showPrev(){
   if(r) r.onclick = e => { e.stopPropagation(); draftPhoto = null; showPrev(); };
 }
 function openSheet(it){
+  if(it && it.author !== me){
+    alert(`Seul ${it.author||'l\'auteur'} peut modifier cette idée. Laisse un message ou une proposition dans la discussion.`);
+    return;
+  }
   editing = it ? it.id : null;
   $('#sheet h2').textContent = it ? "Modifier l'idée" : "Nouvelle idée";
   $('#f-save').textContent  = it ? "Enregistrer les modifications" : "Ajouter l'idée";
@@ -616,9 +620,9 @@ function openSheet(it){
   $('#f-title').value = it ? it.title : '';
   $('#f-place').value = (it && it.place) || '';
   $('#f-note').value  = (it && it.note)  || '';
-  const locked = !!(it && it.author !== me);
-  $('#f-day').disabled = locked;
-  $('#f-daynote').style.display = locked ? 'block' : 'none';
+  const locked = false;
+  $('#f-day').disabled = false;
+  $('#f-daynote').style.display = 'none';
   draftPhoto = (it && it.photo) || null;
   showPrev();
   $('#sheet').classList.add('open'); $('#f-title').focus();
@@ -641,13 +645,9 @@ $('#f-save').onclick = ()=>{
   };
   if(editing){
     const it = items.find(x=>x.id===editing) || {};
-    if(it.author === me){
-      o.placedBy = o.day ? (it.day===o.day ? (it.placedBy||it.author) : me) : '';
-    } else {
-      delete o.day;          // le jour appartient à l'auteur
-      delete o.placedBy;
-    }
-    o.editedBy = me; o.editedAt = Date.now();
+    if(it.author !== me){ editing = null; $('#sheet').classList.remove('open'); return; }
+    o.placedBy = o.day ? (it.day===o.day ? (it.placedBy||it.author) : me) : '';
+    o.editedAt = Date.now();
     patchItem(editing, o);
   } else {
     addItem(o);
