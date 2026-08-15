@@ -115,7 +115,11 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 .row{display:flex;gap:8px;align-items:center;margin-top:10px}
 .sel{flex:1;background:var(--nuit-2);border:1px solid rgba(239,233,220,.14);color:var(--calcaire);
   border-radius:11px;padding:9px 10px;font-size:13.5px}
+.sel.locked{color:var(--calcaire-2);border-style:dashed}
+.sel.locked span{font-size:12px;opacity:.75}
+.sel:disabled{opacity:.55}
 .del{background:none;border:0;color:var(--calcaire-2);font-size:13px;cursor:pointer;padding:6px}
+.del.edit{color:var(--azur);font-weight:500}
 
 /* ---------- Fil de discussion ---------- */
 .thread{margin-top:12px;border-top:1px solid rgba(239,233,220,.1);padding-top:10px}
@@ -127,6 +131,10 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 .cmt .bub{background:var(--nuit-2);border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.45;flex:1}
 .cmt .nm{font-size:11.5px;font-weight:600;margin-bottom:2px}
 .cmt .ts{font-size:10.5px;color:var(--calcaire-2);font-weight:400;margin-left:5px}
+.cmt .bub{position:relative}
+.cdel{position:absolute;top:6px;right:8px;background:none;border:0;color:var(--calcaire-2);
+  font-size:19px;line-height:1;cursor:pointer;padding:0 3px;opacity:.6}
+.cdel:hover{opacity:1;color:var(--corail)}
 .cmt.prop .bub{background:rgba(233,160,59,.11);border:1px solid rgba(233,160,59,.35)}
 .prop-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ocre);margin-bottom:4px}
 .prop-act{display:flex;gap:7px;margin-top:9px}
@@ -225,6 +233,7 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
   <input class="field" id="f-place" placeholder="Où ? ex : Cassis (45 min de Marseille)">
   <input class="field" id="f-note" placeholder="Détail utile : horaires, prix, poussette…">
   <select class="sel" id="f-day"></select>
+  <div class="hint" id="f-daynote" style="display:none;margin:-4px 0 10px">Seul l'auteur peut caler l'idée dans un jour. Utilise « Proposer un autre jour » dans la discussion.</div>
   <div class="drop" id="f-drop">📷 Ajouter une photo<div id="f-prev"></div></div>
   <input type="file" id="f-file" accept="image/*" hidden>
   <button class="btn btn-main" id="f-save">Ajouter l'idée</button>
@@ -267,7 +276,7 @@ const dayLabel = k => { const d=DAYS.find(x=>x.key===k); return d ? `${d.dow}. $
 let me   = localStorage.getItem('ofq_user') || "";
 let trip = localStorage.getItem('ofq_trip') || "";
 let items = [], members = {};
-let view = "idees", filterCat = "all", filterDay = null, openThreads = {}, draftPhoto = null, cmtMode = {};
+let view = "idees", filterCat = "all", filterDay = null, openThreads = {}, draftPhoto = null, cmtMode = {}, editing = null;
 let db = null, LOCAL = false, unsubA = null, unsubT = null;
 
 const $ = s => document.querySelector(s);
@@ -429,18 +438,22 @@ function thread(it){
     <span>💬 ${cs.length ? `<b>${cs.length}</b> message${cs.length>1?'s':''}` : 'Commenter ou proposer un autre jour'}</span><span>›</span></button></div>`;
   const mode = cmtMode[it.id] || 'msg';
   const body = cs.map((c,idx)=>{
+    const own = c.author===me;
+    const rm = own ? `<button class="cdel" data-cdel="${it.id}|${idx}" title="Supprimer">×</button>` : '';
     if(c.type==='change'){
       const done = c.applied;
       return `<div class="cmt prop">${av(c.author,'sm')}<div class="bub">
-        <div class="prop-head">Proposition de ${esc(c.author)}</div>
+        <div class="prop-head">Proposition de ${esc(c.author)}${rm}</div>
         <div class="nm">${esc(dayLabel(c.day))}<span class="ts">${when(c.ts)}</span></div>
         ${c.text?`<div>${esc(c.text)}</div>`:''}
         ${done ? `<div class="applied">✓ Appliqué — l'idée est calée ce jour-là</div>`
-               : `<div class="prop-act"><button class="btn btn-sm btn-main" style="margin:0;width:auto" data-apply="${it.id}|${idx}">Appliquer</button></div>`}
+               : (it.author===me
+                  ? `<div class="prop-act"><button class="btn btn-sm btn-main" style="margin:0;width:auto" data-apply="${it.id}|${idx}">Appliquer</button></div>`
+                  : `<div class="applied" style="color:var(--calcaire-2)">En attente de la réponse de ${esc(it.author||'?')}</div>`)}
       </div></div>`;
     }
     return `<div class="cmt">${av(c.author,'sm')}<div class="bub">
-      <div class="nm" style="color:${colOf(c.author)}">${esc(c.author)}<span class="ts">${when(c.ts)}</span></div>
+      <div class="nm" style="color:${colOf(c.author)}">${esc(c.author)}<span class="ts">${when(c.ts)}</span>${rm}</div>
       <div>${esc(c.text)}</div></div></div>`;
   }).join('') || `<div class="empty">Rien pour l'instant. Lance la discussion.</div>`;
 
@@ -477,7 +490,7 @@ function card(it){
     <div class="pad">
       <div class="top"><h3>${esc(it.title)}</h3><span class="cat" style="background:${c.bg};color:${c.fg}">${c.label}</span></div>
       <div class="meta">${it.place?`<b>${esc(it.place)}</b><br>`:''}${esc(it.note||'')}</div>
-      <div class="by">${av(it.author,'sm')} proposé par ${esc(it.author||'?')}</div>
+      <div class="by">${av(it.author,'sm')} proposé par ${esc(it.author||'?')}${it.editedBy?` · modifié par ${esc(it.editedBy)}`:''}</div>
       <div class="votes">
         <button class="vote ${mv==='oui'?'on-oui':''}" data-v="oui" data-id="${it.id}">👍 <b>${s.oui}</b></button>
         <button class="vote ${mv==='bof'?'on-bof':''}" data-v="bof" data-id="${it.id}">🤷 <b>${s.bof}</b></button>
@@ -485,7 +498,10 @@ function card(it){
       </div>
       ${tags?`<div class="who-voted">${tags}</div>`:''}
       <div class="row">
-        <select class="sel" data-day-for="${it.id}">${dayOpts}</select>
+        ${it.author===me
+          ? `<select class="sel" data-day-for="${it.id}">${dayOpts}</select>`
+          : `<div class="sel locked">📌 ${it.day?dayLabel(it.day):'Pas encore calé'} <span>— ${esc(it.author||'?')} décide</span></div>`}
+        <button class="del edit" data-edit="${it.id}">✎ Modifier</button>
         ${it.author===me?`<button class="del" data-del="${it.id}">Supprimer</button>`:''}
       </div>
       ${thread(it)}
@@ -517,10 +533,19 @@ function bindCards(){
   });
   L.querySelectorAll('[data-day-for]').forEach(s=>s.onchange=()=>patchItem(s.dataset.dayFor,{day:s.value, placedBy:s.value?me:''}));
   L.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(confirm('Supprimer cette idée ?')) removeItem(b.dataset.del); });
+  L.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openSheet(items.find(x=>x.id===b.dataset.edit)));
   L.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{ const id=b.dataset.th; openThreads[id]=!openThreads[id]; render(); });
   L.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ const [id,m]=b.dataset.mode.split('|'); cmtMode[id]=m; render(); });
   L.querySelectorAll('[data-csend]').forEach(b=>b.onclick=()=>sendCmt(b.dataset.csend));
   L.querySelectorAll('[data-cin]').forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter') sendCmt(i.dataset.cin); }));
+  L.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{
+    const [id,idx] = b.dataset.cdel.split('|');
+    const it = items.find(x=>x.id===id);
+    const c = (it.comments||[])[+idx];
+    if(!c || c.author!==me) return;
+    if(!confirm('Supprimer ton message ?')) return;
+    patchItem(id, {comments:(it.comments||[]).filter((_,i)=>i!==+idx)});
+  });
   L.querySelectorAll('[data-apply]').forEach(b=>b.onclick=()=>{
     const [id,idx] = b.dataset.apply.split('|');
     const it = items.find(x=>x.id===id);
@@ -573,28 +598,62 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
   render();
 });
-$('#add').onclick = ()=>{
-  $('#f-cat').innerHTML = Object.entries(CATS).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join('');
-  $('#f-day').innerHTML = ['<option value="">Pas encore casé</option>']
-    .concat(DAYS.map(d=>`<option value="${d.key}">${d.dow}. ${d.num} août</option>`)).join('');
-  draftPhoto = null; $('#f-prev').innerHTML='';
+function showPrev(){
+  $('#f-prev').innerHTML = draftPhoto
+    ? `<img src="${draftPhoto}" alt=""><button class="btn btn-ghost btn-sm" id="rmphoto" style="margin-top:9px">Retirer la photo</button>`
+    : '';
+  const r = $('#rmphoto');
+  if(r) r.onclick = e => { e.stopPropagation(); draftPhoto = null; showPrev(); };
+}
+function openSheet(it){
+  editing = it ? it.id : null;
+  $('#sheet h2').textContent = it ? "Modifier l'idée" : "Nouvelle idée";
+  $('#f-save').textContent  = it ? "Enregistrer les modifications" : "Ajouter l'idée";
+  $('#f-cat').innerHTML = Object.entries(CATS).map(([k,c])=>
+    `<option value="${k}" ${it&&it.cat===k?'selected':''}>${c.label}</option>`).join('');
+  $('#f-day').innerHTML = ['<option value="">Pas encore casé</option>'].concat(DAYS.map(d=>
+    `<option value="${d.key}" ${it&&it.day===d.key?'selected':''}>${d.dow}. ${d.num} août</option>`)).join('');
+  $('#f-title').value = it ? it.title : '';
+  $('#f-place').value = (it && it.place) || '';
+  $('#f-note').value  = (it && it.note)  || '';
+  const locked = !!(it && it.author !== me);
+  $('#f-day').disabled = locked;
+  $('#f-daynote').style.display = locked ? 'block' : 'none';
+  draftPhoto = (it && it.photo) || null;
+  showPrev();
   $('#sheet').classList.add('open'); $('#f-title').focus();
-};
+}
+$('#add').onclick = ()=>openSheet(null);
 $('#f-drop').onclick = ()=>$('#f-file').click();
 $('#f-file').onchange = e=>{
   const f = e.target.files[0]; if(!f) return;
   $('#f-prev').innerHTML = '<div style="margin-top:8px">Compression…</div>';
-  readPhoto(f, url=>{ draftPhoto = url; $('#f-prev').innerHTML = `<img src="${url}" alt="">`; });
+  readPhoto(f, url=>{ draftPhoto = url; showPrev(); });
 };
-$('#f-cancel').onclick = ()=>$('#sheet').classList.remove('open');
+$('#f-cancel').onclick = ()=>{ $('#sheet').classList.remove('open'); editing = null; };
 $('#f-save').onclick = ()=>{
   const title = $('#f-title').value.trim();
   if(!title){ $('#f-title').focus(); return; }
-  const o = {title, cat:$('#f-cat').value, place:$('#f-place').value.trim(), note:$('#f-note').value.trim(), day:$('#f-day').value};
-  if(draftPhoto) o.photo = draftPhoto;
-  addItem(o);
+  const o = {
+    title, cat:$('#f-cat').value,
+    place:$('#f-place').value.trim(), note:$('#f-note').value.trim(),
+    day:$('#f-day').value, photo: draftPhoto || ''
+  };
+  if(editing){
+    const it = items.find(x=>x.id===editing) || {};
+    if(it.author === me){
+      o.placedBy = o.day ? (it.day===o.day ? (it.placedBy||it.author) : me) : '';
+    } else {
+      delete o.day;          // le jour appartient à l'auteur
+      delete o.placedBy;
+    }
+    o.editedBy = me; o.editedAt = Date.now();
+    patchItem(editing, o);
+  } else {
+    addItem(o);
+  }
   ['#f-title','#f-place','#f-note'].forEach(s=>$(s).value='');
-  draftPhoto=null; $('#f-prev').innerHTML=''; $('#sheet').classList.remove('open');
+  draftPhoto = null; editing = null; $('#f-prev').innerHTML=''; $('#sheet').classList.remove('open');
 };
 $('#share').onclick = ()=>{
   const url = location.origin + location.pathname + '#' + trip;
