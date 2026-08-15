@@ -169,6 +169,18 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 .fab .btn{flex:1;margin:0}
 #sheet{position:fixed;inset:0;z-index:50;background:rgba(4,12,20,.7);display:none;align-items:flex-end}
 #sheet.open{display:flex}
+#crewsheet{position:fixed;inset:0;z-index:52;background:rgba(4,12,20,.72);display:none;align-items:flex-end}
+#crewsheet.open{display:flex}
+#crewsheet .panel{width:100%;max-width:760px;margin:0 auto;background:var(--nuit-2);border-radius:22px 22px 0 0;
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:up .25s ease}
+#crewsheet h2{font-size:22px;margin-bottom:14px}
+.prow{display:flex;align-items:center;gap:10px;background:var(--carte);border-radius:14px;
+  border-left:3px solid var(--u,var(--azur));padding:11px 13px;margin-bottom:9px}
+.prow .nm{flex:1;font-size:15px}
+.prow .nm small{display:block;color:var(--calcaire-2);font-size:12.5px}
+.wipe{background:rgba(228,87,46,.15);border:1px solid rgba(228,87,46,.4);color:#FFCBBB;
+  border-radius:11px;padding:8px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+.wipe:disabled{opacity:.3;cursor:default}
 #sheet .panel{width:100%;max-width:760px;margin:0 auto;background:var(--nuit-2);border-radius:22px 22px 0 0;
   padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .25s ease}
 @keyframes up{from{transform:translateY(24px)}}
@@ -238,6 +250,12 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
   <input type="file" id="f-file" accept="image/*" hidden>
   <button class="btn btn-main" id="f-save">Ajouter l'idée</button>
   <button class="btn btn-ghost" id="f-cancel" style="width:100%;margin-top:8px">Annuler</button>
+</div></div>
+
+<div id="crewsheet"><div class="panel">
+  <h2>Participants</h2>
+  <div id="crewlist"></div>
+  <button class="btn btn-ghost" id="crew-close" style="width:100%;margin-top:14px">Fermer</button>
 </div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -363,43 +381,6 @@ function readPhoto(file, cb){
   r.readAsDataURL(file);
 }
 
-/* ---------- Idées de départ ---------- */
-const SEED = [
- ["Calanques en bateau depuis Cassis","aquatique","Cassis — 45 min de route","3 calanques, ~1h de bateau. Le matin, mer plus calme."],
- ["Kayak dans la calanque de Sormiou","aquatique","Marseille 9e","À voir avec l'âge des garçons — sinon baignade depuis la plage."],
- ["Île du Frioul en navette","aquatique","Départ Vieux-Port","20 min de bateau, criques et grands espaces pour courir."],
- ["Château d'If","aquatique","Départ Vieux-Port","Court, spectaculaire, bien avec des enfants qui aiment les histoires."],
- ["Aqualand Fréjus","aquatique","Fréjus — 1h30","Journée entière, arriver tôt pour éviter la queue."],
- ["Plage des Catalans","plage","Marseille 7e","La plus proche du centre, sable, poussette OK."],
- ["Plages du Prado","plage","Marseille 8e","Grandes pelouses et aires de jeux juste derrière."],
- ["Plage de la Pointe Rouge","plage","Marseille 8e","Eau peu profonde, parfaite pour les petits."],
- ["Plage du Bestouan","plage","Cassis","Eau très claire, galets — prévoir des chaussons."],
- ["Notre-Dame de la Garde","exterieur","Marseille","Monter en petit train depuis le Vieux-Port, ça évite la côte."],
- ["Parc Borély","exterieur","Marseille 8e","Aires de jeux, poneys, grand lac. Valeur sûre en fin de journée."],
- ["Vallon des Auffes au coucher du soleil","exterieur","Marseille 7e","Mini port de carte postale, 20 min sur place suffisent."],
- ["Marché aux poissons du Vieux-Port","exterieur","Marseille 1er","Tous les matins 8h-13h. Les garçons vont adorer."],
- ["Parc du Mugel","exterieur","La Ciotat — 40 min","Jardin botanique en bord de mer, bien ombragé."],
- ["MuCEM","interieur","Marseille 2e","La passerelle et le fort valent autant que les expos."],
- ["Musée Cosquer","interieur","Villa Méditerranée","Réplique de la grotte en petit véhicule — top les jours de mistral."],
- ["Parc de trampolines / jeux couverts","interieur","Marseille","Plan B jour de pluie ou grosse chaleur."],
- ["Cinéma en famille","interieur","Marseille","Séance clim l'après-midi si la journée est trop chaude."],
- ["Cassis et son port","village","45 min","Se garer en haut, descendre à pied. Glace obligatoire."],
- ["Bormes-les-Mimosas","village","1h30","Ruelles fleuries, ça grimpe — porte-bébé conseillé."],
- ["Saint-Tropez","village","2h","Journée complète, viser tôt pour le parking."],
- ["Antibes et le Fort Carré","village","2h30","Bien à combiner avec le trajet depuis Nice."],
- ["Saint-Paul-de-Vence","village","2h30","Village d'artistes, pavés — porte-bébé plutôt que poussette."],
- ["Villefranche-sur-Mer","village","2h45","Petite plage abritée juste sous le village."],
- ["Èze village","village","3h","Montée raide : porte-bébé obligatoire, pas de poussette."],
- ["Aix-en-Provence","village","40 min","Cours Mirabeau, fontaines, marché le matin."],
- ["Match de l'OM au Vélodrome","foot","Marseille 8e — dim. 23 août","Billets à prendre. Vérifier l'heure du coup d'envoi."],
- ["Visite du stade Vélodrome","foot","Marseille 8e","Vestiaires et pelouse, ~1h. Plan B s'il n'y a pas de billets."],
- ["Boutique officielle OM","foot","Vieux-Port ou Vélodrome","Maillots floqués pour les garçons."],
- ["Récupérer la voiture de location","logistique","Aéroport de Nice — lun. 17 août","Sièges auto à confirmer à la réservation."],
- ["Route Nice → Marseille avec arrêts","logistique","lun. 17 ou mar. 18 août","2h30 sans arrêt, le double avec les villages."],
- ["Bouillabaisse ou panisses en famille","resto","Marseille","Un vrai repas du sud, un soir où tout le monde a la forme."]
-];
-const seed = () => SEED.forEach(([title,cat,place,note])=>addItem({title,cat,place,note,day:""}));
-
 /* ---------- Calculs ---------- */
 function score(it){
   const v = Object.values(it.votes||{});
@@ -514,10 +495,9 @@ function renderIdees(){
   if(filterDay) list = list.filter(i=>i.day===filterDay);
   list.sort((a,b)=>{const A=score(a),B=score(b);return (B.oui-B.non)-(A.oui-A.non)});
   if(!items.length){
-    $('#list').innerHTML = `<div class="card" style="--u:var(--ocre)"><div class="pad"><div class="top"><h3>Rien pour l'instant</h3></div>
-      <div class="meta">Charge les 32 idées de départ — Marseille, les calanques, les villages de la côte, l'OM — puis chacun vote.</div>
-      <button class="btn btn-main" id="seed">Charger les idées de départ</button></div></div>`;
-    $('#seed').onclick = seed; return;
+    $('#list').innerHTML = `<div class="card" style="--u:var(--ocre)"><div class="pad"><div class="top"><h3>Aucune idée pour l'instant</h3></div>
+      <div class="meta">Appuie sur « + Ajouter une idée » en bas pour lancer le voyage.</div></div></div>`;
+    return;
   }
   $('#list').innerHTML = list.length ? list.map(card).join('')
     : `<div class="empty">Aucune idée dans ce filtre. Ajoute la première.</div>`;
@@ -661,6 +641,43 @@ $('#share').onclick = ()=>{
   if(navigator.share) navigator.share({title:"On fait quoi cette semaine ?", text:txt}).catch(()=>{});
   else navigator.clipboard.writeText(txt).then(()=>{ $('#share').textContent='Lien copié'; setTimeout(()=>$('#share').textContent='Inviter',1600); });
 };
+
+$('#crew').onclick = openCrew;
+$('#crew-close').onclick = ()=>$('#crewsheet').classList.remove('open');
+function openCrew(){
+  const people = [...new Set([...Object.keys(members), ...items.map(i=>i.author).filter(Boolean), me])];
+  $('#crewlist').innerHTML = people.map(n=>{
+    const nb = items.filter(i=>i.author===n).length;
+    return `<div class="prow" style="--u:${colOf(n)}">
+      ${av(n,'lg')}
+      <div class="nm">${esc(n)}${n===me?' <small>c\'est toi</small>':`<small>${nb} idée${nb>1?'s':''}</small>`}</div>
+      <button class="wipe" data-wipe="${esc(n)}" ${nb?'':'disabled'}>Supprimer ses ${nb} idée${nb>1?'s':''}</button>
+    </div>`;
+  }).join('') || '<div class="empty">Personne pour l\'instant.</div>';
+  $('#crewlist').querySelectorAll('[data-wipe]').forEach(b=>b.onclick=()=>wipe(b.dataset.wipe));
+  $('#crewsheet').classList.add('open');
+}
+function wipe(who){
+  const targets = items.filter(i=>i.author===who);
+  if(!targets.length) return;
+  if(!confirm(`Supprimer définitivement les ${targets.length} idées de ${who} ?\n\nLes votes et les discussions rattachés partiront aussi. C'est irréversible.`)) return;
+  if(!confirm(`Dernière vérification : ${targets.length} idées vont disparaître pour tout le monde. On y va ?`)) return;
+  if(LOCAL){
+    items = items.filter(i=>i.author!==who); localSave(); render(); openCrew(); return;
+  }
+  const chunks = [];
+  for(let i=0;i<targets.length;i+=400) chunks.push(targets.slice(i,i+400));
+  Promise.all(chunks.map(ch=>{
+    const b = db.batch();
+    ch.forEach(t=>b.delete(actRef().doc(t.id)));
+    return b.commit();
+  })).then(()=>{
+    $('#crewsheet').classList.remove('open');
+    setBanner(`<div class="banner ok">${targets.length} idées de ${esc(who)} supprimées.</div>`);
+  }).catch(e=>{
+    setBanner(`<div class="banner err">Suppression refusée : <code>${esc(e.code||e.message)}</code></div>`);
+  });
+}
 
 /* ---------- Entrée ---------- */
 function openGate(){
