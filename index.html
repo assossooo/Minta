@@ -134,7 +134,11 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 #sheet h2{font-size:22px;margin-bottom:14px}
 #sheet .field,#sheet .sel{margin-bottom:9px;width:100%}
 .banner{background:rgba(233,160,59,.12);border:1px solid rgba(233,160,59,.3);color:#F5D9A8;
-  border-radius:12px;padding:9px 12px;font-size:12.5px;margin:8px 0 2px;line-height:1.45}
+  border-radius:12px;padding:11px 13px;font-size:12.5px;margin:8px 0 2px;line-height:1.5}
+.banner.err{background:rgba(228,87,46,.14);border-color:rgba(228,87,46,.45);color:#FFCBBB}
+.banner.ok{background:rgba(63,198,212,.1);border-color:rgba(63,198,212,.3);color:#B9EEF4}
+.banner code{font-family:ui-monospace,monospace;font-size:11.5px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:5px}
+.banner .btn{margin-top:9px;padding:11px 14px;font-size:14px}
 .foot{text-align:center;color:var(--calcaire-2);font-size:12px;padding:26px 0 6px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -191,17 +195,16 @@ header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* =========================================================================
-   1) CONFIG FIREBASE — colle ici le firebaseConfig de ton projet.
-   Tant que c'est vide, le site tourne en mode local (données sur ton appareil
-   uniquement). Dès que c'est rempli, tout le monde voit les mêmes idées.
+   Projet Firebase : minta-126b4 — config déjà en place.
+   Il reste à publier les règles Firestore sur le chemin ofq_trips (voir chat).
    ========================================================================= */
 const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyBQFA9hpbUiW-ypGoK309svuXd1LMRsRWI",
+  authDomain: "minta-126b4.firebaseapp.com",
+  projectId: "minta-126b4",
+  storageBucket: "minta-126b4.firebasestorage.app",
+  messagingSenderId: "116228959256",
+  appId: "1:116228959256:web:c8280ed36eb8f918bea76d"
 };
 const TRIP_ID = "marseille-2026";
 /* ========================================================================= */
@@ -233,21 +236,63 @@ let db = null, LOCAL = !firebaseConfig.apiKey;
 function localLoad(){ try{ return JSON.parse(localStorage.getItem('ofq_items')||"[]"); }catch(e){ return []; } }
 function localSave(){ localStorage.setItem('ofq_items', JSON.stringify(items)); }
 
+function setBanner(html){ document.getElementById('banner').innerHTML = html; }
+
+function fallback(reason){
+  LOCAL = true; items = localLoad(); render();
+  setBanner(`<div class="banner err"><b>Personne d'autre ne voit tes idées.</b><br>
+    ${reason}<br>En attendant, tes idées restent sur cet appareil.</div>`);
+}
+
 function start(){
-  if(LOCAL){ items = localLoad(); render(); return; }
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
+  if(!firebaseConfig.apiKey || !firebaseConfig.projectId){
+    return fallback(`Le bloc <code>firebaseConfig</code> en haut de <code>index.html</code> est encore vide. Colle celui de ta console Firebase, puis republie le fichier.`);
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){ return fallback(`Firebase n'a pas démarré : <code>${esc(e.message)}</code>`); }
+
   db.collection('ofq_trips').doc(TRIP_ID).collection('activities')
     .orderBy('createdAt','asc')
     .onSnapshot(snap=>{
+      LOCAL = false;
       items = snap.docs.map(d=>({id:d.id, ...d.data()}));
       render();
+      showShared();
     }, err=>{
       console.error(err);
-      LOCAL = true; items = localLoad(); render();
-      document.getElementById('banner').innerHTML =
-        `<div class="banner">Connexion à la base impossible — tu es en mode local. Vérifie les règles Firestore.</div>`;
+      fallback(`Firestore a refusé la lecture : <code>${esc(err.code||'')}</code>. Vérifie que la base Firestore est bien créée et que les règles autorisent <code>ofq_trips</code>.`);
     });
+}
+
+/* Idées saisies avant la connexion → on propose de les envoyer à tout le monde */
+function showShared(){
+  const local = localLoad();
+  const orphans = local.filter(l => !items.some(i => i.title === l.title));
+  if(!orphans.length){
+    setBanner(`<div class="banner ok">Partagé ✓ — tout le monde voit les mêmes idées, en direct.</div>`);
+    return;
+  }
+  setBanner(`<div class="banner">Partagé ✓ — mais <b>${orphans.length} idée(s)</b> saisies avant la connexion sont restées sur cet appareil.
+    <button class="btn btn-main" id="imp">Envoyer ces ${orphans.length} idées à tout le monde</button></div>`);
+  document.getElementById('imp').onclick = ()=>{
+    document.getElementById('imp').textContent = 'Envoi…';
+    const batch = db.batch();
+    const col = db.collection('ofq_trips').doc(TRIP_ID).collection('activities');
+    orphans.forEach(o=>{
+      batch.set(col.doc(), {
+        title:o.title, cat:o.cat, place:o.place||'', note:o.note||'',
+        day:o.day||'', votes:o.votes||{}, author:o.author||me, createdAt:o.createdAt||Date.now()
+      });
+    });
+    batch.commit().then(()=>{
+      localStorage.removeItem('ofq_items');
+      setBanner(`<div class="banner ok">Envoyé ✓ — les ${orphans.length} idées sont maintenant visibles par tout le monde.</div>`);
+    }).catch(e=>{
+      setBanner(`<div class="banner err">Envoi refusé : <code>${esc(e.code||e.message)}</code>. Les règles Firestore n'autorisent pas l'écriture.</div>`);
+    });
+  };
 }
 function addItem(o){
   const doc = {...o, votes:{}, author:me, createdAt: Date.now()};
@@ -407,7 +452,7 @@ function render(){
   $('#who').textContent = me + ' · changer';
   $('#foot').textContent = LOCAL
     ? "Mode local — les idées restent sur cet appareil."
-    : "Tout le monde voit les mêmes idées, en direct.";
+    : "Base partagée : " + firebaseConfig.projectId;
 }
 function esc(s){ return String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
 
